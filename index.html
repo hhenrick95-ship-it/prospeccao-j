@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b6e4f">
+<title>Prospecção PepsiCo J</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* App de campo, uma coluna no celular: cabeçalho fixo com vendedor e busca; bairros recolhíveis; ações grandes para o polegar. */
+:root {
+  --bg: #f3f5f4; --surface: #ffffff; --ink: #14201c; --ink2: #56635e; --line: #dde3e0;
+  --accent: #0b6e4f; --accent-ink: #ffffff; --accent-soft: #e2f1eb;
+  --warn: #9a5b00; --warn-soft: #fbefd9; --bad: #a32020;
+  --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 10px; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0f1513; --surface: #18201d; --ink: #e8eeeb; --ink2: #9aa8a2; --line: #2a3531;
+  --accent: #3fbf8f; --accent-ink: #06130e; --accent-soft: #173229; --warn: #f0b45a; --warn-soft: #33270f; --bad: #ff8a80; color-scheme: dark } }
+* { box-sizing: border-box }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px) }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.4 }
+[hidden] { display: none !important }
+img { max-width: 100% }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+header { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line) }
+header .wrap { padding-block: 12px; display: grid; gap: 10px }
+h1 { font-family: var(--display); font-size: 22px; letter-spacing: .01em; margin: 0; line-height: 1.1; text-wrap: balance }
+.top { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap }
+.sub { color: var(--ink2); font-size: 12.5px }
+select, input, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0 }
+.chips { display: flex; gap: 6px; flex-wrap: wrap }
+.chip { font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink2); cursor: pointer }
+.chip[aria-pressed=true] { background: var(--ink); color: var(--surface); border-color: var(--ink) }
+.stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--ink2) }
+.stats b { color: var(--ink); font-variant-numeric: tabular-nums; font-size: 15px }
+main .wrap { padding-block: 14px 40px; display: grid; gap: 12px }
+.login { max-width: 380px; margin: 8vh auto 0; display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px }
+.login label { display: grid; gap: 4px; font-size: 13px; color: var(--ink2) }
+.login .erro { color: var(--bad); font-size: 13.5px; margin: 0 }
+details.bairro { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r) }
+details.bairro > summary { list-style: none; cursor: pointer; padding: 12px 14px; display: flex; align-items: baseline; gap: 10px; justify-content: space-between }
+details.bairro > summary::-webkit-details-marker { display: none }
+.bnome { font-family: var(--display); font-size: 19px; font-weight: 700 }
+.bnome::before { content: "▸ "; color: var(--ink2); font-size: 14px }
+details[open] > summary .bnome::before { content: "▾ " }
+.bcont { font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums; white-space: nowrap }
+.lista { display: grid; border-top: 1px solid var(--line) }
+.cli { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 10px }
+.cli:last-child { border-bottom: 0 }
+.chead { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start }
+.cnome { font-weight: 600; font-size: 16px; min-width: 0 }
+.cnome small { display: block; font-weight: 400; color: var(--ink2); font-size: 12.5px }
+.visitas { text-align: center; min-width: 64px; padding: 6px 8px; border-radius: 8px; background: var(--warn-soft); color: var(--warn) }
+.visitas.ok { background: var(--accent-soft); color: var(--accent) }
+.visitas b { display: block; font-family: var(--display); font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums }
+.visitas span { font-size: 11px; text-transform: uppercase; letter-spacing: .05em }
+.info { display: grid; gap: 3px; font-size: 13.5px; color: var(--ink2) }
+.info .tel { user-select: all; color: var(--ink) }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px }
+.tag { padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--ink2) }
+.tag.gps { color: var(--accent); border-color: var(--accent) }
+.tag.semgps { color: var(--warn); border-color: var(--warn) }
+.acoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+.btn { font: inherit; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; text-align: center }
+.btn.pri { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.btn.link { border: 0; background: none; color: var(--ink2); min-height: 0; padding: 4px; font-weight: 500; text-decoration: underline }
+.btn:disabled { opacity: .55; cursor: default }
+.btn:focus-visible, .chip:focus-visible, summary:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.foto { display: block; width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); cursor: zoom-in }
+.fotolegenda { font-size: 12px; color: var(--ink2) }
+.painel { display: grid; gap: 8px; padding: 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line) }
+.painel p { margin: 0; font-size: 13px; color: var(--ink2) }
+.fb { display: grid; gap: 2px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 6px 6px 0 }
+.fb .quem { font-size: 12px; color: var(--ink2) }
+.fb .txt { white-space: pre-wrap; overflow-wrap: anywhere }
+textarea { width: 100%; min-height: 70px; resize: vertical }
+.msg { padding: 14px; border-radius: var(--r); background: var(--surface); border: 1px dashed var(--line); color: var(--ink2) }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: 10px; display: flex; gap: 12px; align-items: center; font-size: 14px; z-index: 20; max-width: calc(100% - 32px) }
+.toast button { font: inherit; font-weight: 700; background: none; border: 0; color: var(--accent-soft); cursor: pointer; padding: 4px }
+dialog { border: 0; padding: 0; background: transparent; max-width: 96vw }
+dialog::backdrop { background: rgba(0,0,0,.8) }
+dialog img { max-width: 96vw; max-height: 86vh; border-radius: 8px; display: block }
+dialog button { margin-top: 8px; width: 100% }
+@media (min-width: 620px) { .acoes { grid-template-columns: repeat(4, minmax(0, 1fr)) } }
+</style>
+</head>
+<body>
+
+<section id="telaLogin" hidden>
+  <div class="wrap">
+    <form class="login" id="formLogin">
+      <h1>Prospecção PepsiCo · Equipe J</h1>
+      <p class="sub">Clientes que compram PepsiCo e ainda não são da sua base.</p>
+      <label for="loginRca">Vendedor<select id="loginRca" required><option value="">Carregando…</option></select></label>
+      <label for="loginPin">PIN<input id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" required></label>
+      <p class="erro" id="loginErro" hidden></p>
+      <button class="btn pri" type="submit" id="loginBtn">Entrar</button>
+      <p class="sub">O celular lembra o seu acesso. Não passe o seu PIN para outra pessoa.</p>
+    </form>
+  </div>
+</section>
+
+<section id="telaApp" hidden>
+  <header>
+    <div class="wrap">
+      <div class="top">
+        <div>
+          <h1 id="titulo">Prospecção PepsiCo</h1>
+          <div class="sub" id="sub"></div>
+        </div>
+        <button class="btn link" id="sair">Sair</button>
+      </div>
+      <input type="search" id="busca" placeholder="Buscar cliente, código ou rua" aria-label="Buscar cliente">
+      <div class="chips" role="group" aria-label="Filtro">
+        <button class="chip" data-f="todos" aria-pressed="true">Todos</button>
+        <button class="chip" data-f="nao" aria-pressed="false">Não visitados</button>
+        <button class="chip" data-f="sim" aria-pressed="false">Visitados</button>
+        <button class="chip" data-f="semfoto" aria-pressed="false">Sem foto</button>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </header>
+  <main><div class="wrap" id="app"><div class="msg">Carregando os clientes…</div></div></main>
+</section>
+
+<dialog id="zoom"><img id="zoomimg" alt="Foto da fachada"><button class="btn" id="zoomfechar">Fechar</button></dialog>
+<div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="toastacao" hidden>Desfazer</button></div>
+
+<script>
+// ===== CONFIGURAÇÃO: cole aqui a URL do projeto e a chave anon (pública) do Supabase =====
+const SUPABASE_URL = "https://fxsqzgsijqnxkjtksnvs.supabase.co";        // ex.: https://abcdxyz.supabase.co
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4c3F6Z3NpanFueGtqdGtzbnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDg2NTcsImV4cCI6MjExMDA4NDY1N30.zWE1Y6ZPg5EKjSwdsVBhUi7bWP7C14rUVUS_cYWCJrU"; // Project Settings > API > anon public
+// ===========================================================================================
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const brl = v => "R$ " + Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+const dm = s => s ? s.slice(8, 10) + "/" + s.slice(5, 7) : "";
+const dmh = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} }, del(k) { try { localStorage.removeItem(k) } catch {} } };
+const H = { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON };
+
+const S = { rca: store.get("rca") || "", pin: store.get("pin") || "", base: [], busca: "", filtro: "todos", abertos: new Set(), painel: {}, rascunho: {} };
+const ERROS = { pin: "PIN errado. Confira e tente de novo.", bloqueado: "Muitas tentativas erradas. Espere 15 minutos.", fora: "Essas coordenadas ficam fora de Manaus.", vazio: "Escreva o feedback antes de salvar." };
+
+async function rpc(fn, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: "POST", headers: { ...H, "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  if (!r.ok) throw new Error("rede");
+  return r.json();
+}
+const auth = () => ({ p_rca: S.rca, p_pin: S.pin });
+
+// ---------- login ----------
+async function telaLogin(msg) {
+  $("#telaApp").hidden = true; $("#telaLogin").hidden = false;
+  $("#loginErro").hidden = !msg; $("#loginErro").textContent = msg || "";
+  try {
+    const vs = await rpc("lista_vendedores");
+    $("#loginRca").innerHTML = `<option value="">Escolha seu código</option>` + vs.map(v => `<option value="${esc(v.rca)}">${esc(v.rca === "*" ? "Supervisor · todos" : v.rca + " · " + v.nome.split(" ").slice(0, 2).join(" "))}</option>`).join("");
+    $("#loginRca").value = S.rca;
+  } catch { $("#loginErro").hidden = false; $("#loginErro").textContent = "Sem conexão com o servidor. Confira a internet."; }
+}
+$("#formLogin").addEventListener("submit", async e => {
+  e.preventDefault();
+  S.rca = $("#loginRca").value; S.pin = $("#loginPin").value.trim();
+  $("#loginBtn").disabled = true;
+  await carregar(true);
+  $("#loginBtn").disabled = false;
+});
+$("#sair").onclick = () => { store.del("pin"); S.pin = ""; $("#loginPin").value = ""; telaLogin(); };
+
+async function carregar(doLogin) {
+  try {
+    const r = await rpc("entrar", auth());
+    if (!r.ok) { store.del("pin"); return telaLogin(ERROS[r.erro] || "Não consegui entrar."); }
+    store.set("rca", S.rca); store.set("pin", S.pin);
+    S.base = r.clientes; S.nome = r.nome;
+    $("#titulo").textContent = S.rca === "*" ? "Prospecção PepsiCo · Equipe J" : `Prospecção PepsiCo · ${S.rca}`;
+    $("#sub").textContent = `${r.regras || ""}${r.atualizado_em ? " · lista de " + dmh(r.atualizado_em) : ""}`;
+    $("#telaLogin").hidden = true; $("#telaApp").hidden = false;
+    render();
+  } catch {
+    if (doLogin || !S.base.length) telaLogin("Sem conexão com o servidor. Confira a internet.");
+    else toast("Sem internet: a lista pode estar desatualizada");
+  }
+}
+
+// ---------- render ----------
+function pos(c) {
+  if (c.geo) return { lat: c.geo.lat, lng: c.geo.lng, origem: "vendedor" };
+  if (c.lat != null) return { lat: c.lat, lng: c.lng, origem: "cadastro" };
+  return null;
+}
+function mapsUrl(c) {
+  const p = pos(c);
+  return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(p ? `${p.lat},${p.lng}` : `${c.endereco}, ${c.bairro}, Manaus - AM`);
+}
+const fotoUrl = caminho => `${SUPABASE_URL}/storage/v1/object/public/fachadas/${caminho}`;
+
+function render() {
+  const q = S.busca.trim().toLowerCase();
+  let lista = S.base;
+  $("#stats").innerHTML = `<span><b>${lista.length}</b> clientes</span><span><b>${lista.filter(c => c.visitas).length}</b> visitados</span><span><b>${lista.filter(c => c.foto).length}</b> com foto</span><span><b>${lista.filter(c => c.feedbacks.length).length}</b> com feedback</span>`;
+  if (q) lista = lista.filter(c => `${c.nome} ${c.razao} ${c.codcli} ${c.endereco}`.toLowerCase().includes(q));
+  if (S.filtro === "nao") lista = lista.filter(c => !c.visitas);
+  if (S.filtro === "sim") lista = lista.filter(c => c.visitas);
+  if (S.filtro === "semfoto") lista = lista.filter(c => !c.foto);
+  const app = $("#app");
+  if (!S.base.length) { app.innerHTML = `<div class="msg">Nenhum cliente na sua lista agora.</div>`; return; }
+  if (!lista.length) { app.innerHTML = `<div class="msg">Nenhum cliente com esse filtro.</div>`; return; }
+  const grupos = new Map();
+  lista.forEach(c => { const k = (S.rca === "*" ? c.rca_j + " · " : "") + c.bairro; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(c); });
+  const ord = [...grupos.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
+  const foco = document.activeElement && document.activeElement.id, sel = foco && document.activeElement.selectionStart;
+  app.innerHTML = ord.map(([b, cs]) => {
+    const v = cs.filter(c => c.visitas).length, aberto = S.abertos.has(b) || q || ord.length === 1;
+    return `<details class="bairro" data-b="${esc(b)}" ${aberto ? "open" : ""}>
+      <summary><span class="bnome">${esc(b)}</span><span class="bcont">${cs.length} cliente${cs.length > 1 ? "s" : ""} · ${v} visitado${v === 1 ? "" : "s"}</span></summary>
+      <div class="lista">${aberto ? cs.map(cartao).join("") : ""}</div></details>`;
+  }).join("");
+  if (foco) { const el = document.getElementById(foco); if (el) { el.focus(); try { el.setSelectionRange(sel, sel); } catch {} } }
+}
+
+function cartao(c) {
+  const k = String(c.codcli), p = pos(c), painel = S.painel[k] || "", fbs = c.feedbacks;
+  const foto = c.foto ? `<img class="foto" src="${esc(fotoUrl(c.foto.caminho))}" alt="Fachada de ${esc(c.nome)}" loading="lazy" data-zoom="${esc(fotoUrl(c.foto.caminho))}">
+      <div class="fotolegenda">Foto de ${esc(dmh(c.foto.em))} · ${esc(c.foto.rca)}</div>` : "";
+  let extra = "";
+  if (painel === "geo") extra = `<div class="painel">
+      <p>Na frente do cliente, toque em <b>Usar minha localização</b>. Se não funcionar, abra o Google Maps, toque e segure no ponto do cliente, copie as coordenadas (ex.: -3.0712, -60.0251) e cole abaixo.</p>
+      <button class="btn pri" data-a="gpsauto" data-k="${k}">Usar minha localização</button>
+      <input type="text" id="geo-${k}" placeholder="-3.0712, -60.0251 ou link do Maps" aria-label="Coordenadas do cliente">
+      <div class="acoes"><button class="btn" data-a="gpssalvar" data-k="${k}">Salvar coordenadas</button><button class="btn" data-a="fechar" data-k="${k}">Cancelar</button></div></div>`;
+  if (painel === "fb") extra = `<div class="painel">
+      ${fbs.map(f => `<div class="fb"><span class="quem">${esc(f.rca)} · ${esc(dmh(f.em))}</span><span class="txt">${esc(f.texto)}</span></div>`).join("") || "<p>Nenhum feedback ainda.</p>"}
+      <label class="sub" for="fbtxt-${k}">Novo feedback</label>
+      <textarea id="fbtxt-${k}" placeholder="Ex.: dono pediu para voltar sexta; já compra iogurte de outra marca">${esc(S.rascunho[k] || "")}</textarea>
+      <div class="acoes"><button class="btn pri" data-a="fbsalvar" data-k="${k}">Salvar feedback</button><button class="btn" data-a="fechar" data-k="${k}">Fechar</button></div></div>`;
+  return `<article class="cli">
+    <div class="chead">
+      <div class="cnome">${esc(c.nome)}<small>Cód. ${k}${c.razao && c.razao !== c.nome ? " · " + esc(c.razao) : ""}</small></div>
+      <div class="visitas ${c.visitas ? "ok" : ""}" title="Visitas registradas"><b>${c.visitas}</b><span>visita${c.visitas === 1 ? "" : "s"}</span></div>
+    </div>
+    <div class="info">
+      <span>${esc(c.endereco || "Sem endereço")} · ${esc(c.bairro)}</span>
+      ${c.telefone ? `<span>Tel.: <span class="tel">${esc(c.telefone)}</span></span>` : ""}
+      <span>PepsiCo no mês: <b style="color:var(--ink)">${brl(c.pepsico)}</b> em ${c.pedidos_pepsico} pedido${c.pedidos_pepsico > 1 ? "s" : ""} (${esc(c.rca_pepsico)}) · Danone: ${c.ult_danone ? "última em " + dm(c.ult_danone) + "/" + c.ult_danone.slice(2, 4) : "nunca comprou (12 meses)"}</span>
+      ${c.ult_visita ? `<span>Última visita: ${esc(dmh(c.ult_visita.em))} · ${esc(c.ult_visita.rca)}</span>` : ""}
+    </div>
+    <div class="tags">
+      ${c.ramo ? `<span class="tag">${esc(c.ramo)}</span>` : ""}
+      ${c.carteira ? `<span class="tag">Carteira: ${esc(c.carteira)}</span>` : ""}
+      ${p ? `<span class="tag gps">GPS ${p.origem === "vendedor" ? "atualizado pelo vendedor" : "do cadastro"}</span>` : `<span class="tag semgps">Sem GPS: Maps abre pelo endereço</span>`}
+    </div>
+    ${foto}
+    <div class="acoes">
+      <a class="btn pri" href="${esc(mapsUrl(c))}" target="_blank" rel="noopener">Abrir no Maps</a>
+      <button class="btn" data-a="visita" data-k="${k}">Registrar visita</button>
+      <label class="btn">${c.foto ? "Trocar foto" : "Foto da fachada"}<input type="file" accept="image/*" capture="environment" data-a="foto" data-k="${k}" hidden></label>
+      <button class="btn" data-a="geo" data-k="${k}">Atualizar localização</button>
+      <button class="btn" data-a="fb" data-k="${k}" style="grid-column:1/-1">Feedbacks${fbs.length ? " (" + fbs.length + ")" : ""}</button>
+    </div>
+    ${extra}
+  </article>`;
+}
+
+// ---------- ações ----------
+let toastT;
+function toast(msg, desfazer) {
+  $("#toastmsg").textContent = msg; $("#toast").hidden = false;
+  $("#toastacao").hidden = !desfazer; $("#toastacao").onclick = desfazer ? async () => { $("#toast").hidden = true; await desfazer(); } : null;
+  clearTimeout(toastT); toastT = setTimeout(() => $("#toast").hidden = true, desfazer ? 7000 : 3500);
+}
+const cli = k => S.base.find(c => String(c.codcli) === k);
+function falhou(r) { if (r.erro === "pin" || r.erro === "bloqueado") { store.del("pin"); telaLogin(ERROS[r.erro]); } else toast(ERROS[r.erro] || "Não consegui salvar. Tente de novo."); }
+function parseCoord(t) {
+  try { t = decodeURIComponent(String(t || "")); } catch {}
+  const m = t.match(/(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/) || t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  return m ? { lat: +m[1], lng: +m[2] } : null;
+}
+async function salvarGeo(k, g) {
+  const r = await rpc("salvar_localizacao", { ...auth(), p_codcli: +k, p_lat: g.lat, p_lng: g.lng });
+  if (!r.ok) return falhou(r);
+  cli(k).geo = { ...g, em: new Date().toISOString(), rca: S.rca };
+  delete S.painel[k]; render(); toast("Localização salva");
+}
+async function reduzir(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, err) => { const i = new Image(); i.onload = () => ok(i); i.onerror = err; i.src = url; });
+    const f = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const cv = document.createElement("canvas"); cv.width = Math.round(img.naturalWidth * f); cv.height = Math.round(img.naturalHeight * f);
+    cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+    return await new Promise((ok, err) => cv.toBlob(b => b ? ok(b) : err(), "image/jpeg", 0.8));
+  } finally { URL.revokeObjectURL(url); }
+}
+const uuid = () => crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+
+document.addEventListener("click", async e => {
+  const z = e.target.closest("[data-zoom]");
+  if (z) { $("#zoomimg").src = z.dataset.zoom; $("#zoom").showModal(); return; }
+  const ch = e.target.closest(".chip");
+  if (ch) { document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", b === ch)); S.filtro = ch.dataset.f; render(); return; }
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  const k = b.dataset.k, a = b.dataset.a;
+  try {
+    if (a === "visita") {
+      b.disabled = true;
+      const r = await rpc("registrar_visita", { ...auth(), p_codcli: +k });
+      if (!r.ok) { b.disabled = false; return falhou(r); }
+      const c = cli(k), antes = c.ult_visita;
+      c.visitas++; c.ult_visita = { id: r.id, em: new Date().toISOString(), rca: S.rca }; render();
+      toast(`Visita registrada em ${c.nome}`, async () => {
+        const d = await rpc("desfazer_visita", { ...auth(), p_id: r.id }).catch(() => ({ ok: false }));
+        if (d.ok) { c.visitas--; c.ult_visita = antes; render(); toast("Visita desfeita"); } else toast("Não deu para desfazer");
+      });
+    } else if (a === "geo" || a === "fb") { S.painel[k] = S.painel[k] === a ? "" : a; render(); }
+    else if (a === "fechar") { delete S.painel[k]; render(); }
+    else if (a === "gpssalvar") {
+      const g = parseCoord(document.getElementById("geo-" + k).value);
+      if (!g) return toast("Não reconheci as coordenadas. Cole no formato -3.0712, -60.0251");
+      await salvarGeo(k, g);
+    } else if (a === "gpsauto") {
+      if (!navigator.geolocation) return toast("Este celular não libera a localização. Cole as coordenadas do Maps.");
+      b.disabled = true; b.textContent = "Buscando localização…";
+      navigator.geolocation.getCurrentPosition(
+        p => salvarGeo(k, { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }).catch(() => toast("Não consegui salvar. Tente de novo.")),
+        () => { b.disabled = false; b.textContent = "Usar minha localização"; toast("Localização bloqueada. Libere a localização para o navegador ou cole as coordenadas."); },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+    } else if (a === "fbsalvar") {
+      const t = document.getElementById("fbtxt-" + k).value.trim();
+      if (!t) return toast(ERROS.vazio);
+      b.disabled = true;
+      const r = await rpc("salvar_feedback", { ...auth(), p_codcli: +k, p_texto: t });
+      if (!r.ok) { b.disabled = false; return falhou(r); }
+      cli(k).feedbacks.unshift({ texto: t, em: new Date().toISOString(), rca: S.rca }); delete S.rascunho[k]; render(); toast("Feedback salvo");
+    }
+  } catch { b.disabled = false; toast("Sem internet. Tente de novo quando tiver sinal."); }
+});
+
+document.addEventListener("change", async e => {
+  const f = e.target.closest('input[data-a="foto"]');
+  if (!f || !f.files[0]) return;
+  const k = f.dataset.k;
+  toast("Enviando foto…");
+  try {
+    const blob = await reduzir(f.files[0]);
+    const caminho = `${k}/${uuid()}.jpg`;
+    const up = await fetch(`${SUPABASE_URL}/storage/v1/object/fachadas/${caminho}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: blob });
+    if (!up.ok) throw new Error("upload");
+    const r = await rpc("salvar_foto", { ...auth(), p_codcli: +k, p_caminho: caminho });
+    if (!r.ok) return falhou(r);
+    cli(k).foto = { caminho, em: new Date().toISOString(), rca: S.rca }; render(); toast("Foto salva");
+  } catch { toast("Não consegui enviar a foto. Tente de novo."); }
+  f.value = "";
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "busca") { S.busca = e.target.value; render(); }
+  if (e.target.id && e.target.id.startsWith("fbtxt-")) S.rascunho[e.target.id.slice(6)] = e.target.value;
+});
+document.addEventListener("toggle", e => {
+  const d = e.target; if (!d.classList || !d.classList.contains("bairro")) return;
+  if (d.open && !S.abertos.has(d.dataset.b)) { S.abertos.add(d.dataset.b); render(); } else if (!d.open) S.abertos.delete(d.dataset.b);
+}, true);
+$("#zoomfechar").onclick = () => $("#zoom").close();
+// atualiza a lista quando o vendedor volta para o app
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.pin && !$("#telaApp").hidden) carregar(false); });
+
+if (SUPABASE_URL.startsWith("COLE")) { document.body.innerHTML = '<div class="msg" style="margin:16px">Configure SUPABASE_URL e SUPABASE_ANON no início deste arquivo.</div>'; }
+else if (S.rca && S.pin) carregar(false); else telaLogin();
+</script>
+</body>
+</html>
