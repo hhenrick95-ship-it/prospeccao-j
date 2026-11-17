@@ -75,6 +75,10 @@ details[open] > summary .bnome::before { content: "▾ " }
 .fotolegenda { font-size: 12px; color: var(--ink2) }
 .painel { display: grid; gap: 8px; padding: 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line) }
 .painel p { margin: 0; font-size: 13px; color: var(--ink2) }
+.passo { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line) }
+.passo .ptit { font-weight: 600; color: var(--ink2) }
+.passo.ok .ptit { color: var(--accent) }
+.passo.ok .ptit::after { content: " ✓" }
 .fb { display: grid; gap: 2px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 6px 6px 0 }
 .fb .quem { font-size: 12px; color: var(--ink2) }
 .fb .txt { white-space: pre-wrap; overflow-wrap: anywhere }
@@ -145,8 +149,8 @@ const dmh = iso => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleD
 const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} }, del(k) { try { localStorage.removeItem(k) } catch {} } };
 const H = { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON };
 
-const S = { rca: store.get("rca") || "", pin: store.get("pin") || "", base: [], busca: "", filtro: "todos", abertos: new Set(), painel: {}, rascunho: {} };
-const ERROS = { pin: "PIN errado. Confira e tente de novo.", bloqueado: "Muitas tentativas erradas. Espere 15 minutos.", fora: "Essas coordenadas ficam fora de Manaus.", vazio: "Escreva o feedback antes de salvar." };
+const S = { rca: store.get("rca") || "", pin: store.get("pin") || "", base: [], busca: "", filtro: "todos", abertos: new Set(), painel: {}, form: {} };
+const ERROS = { pin: "PIN errado. Confira e tente de novo.", bloqueado: "Muitas tentativas erradas. Espere 15 minutos.", fora: "Essas coordenadas ficam fora de Manaus.", feedback: "Escreva pelo menos 10 letras no feedback.", foto: "A foto não chegou ao servidor. Tire de novo.", cliente: "Este cliente não está na sua lista." };
 
 async function rpc(fn, body) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: "POST", headers: { ...H, "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
@@ -231,16 +235,35 @@ function cartao(c) {
   const foto = c.foto ? `<img class="foto" src="${esc(fotoUrl(c.foto.caminho))}" alt="Fachada de ${esc(c.nome)}" loading="lazy" data-zoom="${esc(fotoUrl(c.foto.caminho))}">
       <div class="fotolegenda">Foto de ${esc(dmh(c.foto.em))} · ${esc(c.foto.rca)}</div>` : "";
   let extra = "";
-  if (painel === "geo") extra = `<div class="painel">
-      <p>Na frente do cliente, toque em <b>Usar minha localização</b>. Se não funcionar, abra o Google Maps, toque e segure no ponto do cliente, copie as coordenadas (ex.: -3.0712, -60.0251) e cole abaixo.</p>
-      <button class="btn pri" data-a="gpsauto" data-k="${k}">Usar minha localização</button>
-      <input type="text" id="geo-${k}" placeholder="-3.0712, -60.0251 ou link do Maps" aria-label="Coordenadas do cliente">
-      <div class="acoes"><button class="btn" data-a="gpssalvar" data-k="${k}">Salvar coordenadas</button><button class="btn" data-a="fechar" data-k="${k}">Cancelar</button></div></div>`;
-  if (painel === "fb") extra = `<div class="painel">
-      ${fbs.map(f => `<div class="fb"><span class="quem">${esc(f.rca)} · ${esc(dmh(f.em))}</span><span class="txt">${esc(f.texto)}</span></div>`).join("") || "<p>Nenhum feedback ainda.</p>"}
-      <label class="sub" for="fbtxt-${k}">Novo feedback</label>
-      <textarea id="fbtxt-${k}" placeholder="Ex.: dono pediu para voltar sexta; já compra iogurte de outra marca">${esc(S.rascunho[k] || "")}</textarea>
-      <div class="acoes"><button class="btn pri" data-a="fbsalvar" data-k="${k}">Salvar feedback</button><button class="btn" data-a="fechar" data-k="${k}">Fechar</button></div></div>`;
+  if (painel === "visita") {
+    const f = S.form[k] || {}, texto = f.texto || "";
+    const pronto = f.blob && f.geo && texto.trim().length >= 10;
+    extra = `<div class="painel">
+      <p><b style="color:var(--ink)">Registrar visita</b> · os 3 itens são obrigatórios</p>
+      <div class="passo ${f.blob ? "ok" : ""}">
+        <span class="ptit">1. Foto da fachada</span>
+        ${f.prev ? `<img class="foto" src="${esc(f.prev)}" alt="Foto tirada agora">` : ""}
+        <label class="btn ${f.blob ? "" : "pri"}">${f.blob ? "Tirar outra foto" : "Tirar foto da fachada"}<input type="file" accept="image/*" capture="environment" data-a="vfoto" data-k="${k}" hidden></label>
+      </div>
+      <div class="passo ${f.geo ? "ok" : ""}">
+        <span class="ptit">2. Localização do cliente</span>
+        ${f.geo ? `<span class="sub">${f.geo.lat.toFixed(5)}, ${f.geo.lng.toFixed(5)} · ${f.geo.origem === "gps" ? "GPS do celular" + (f.geo.acc ? " (precisão de " + f.geo.acc + " m)" : "") : "coordenadas coladas do Maps"}</span>` : `<span class="sub">Fique na frente do cliente e toque no botão.</span>`}
+        <button class="btn ${f.geo ? "" : "pri"}" data-a="vgps" data-k="${k}">${f.geo ? "Pegar de novo" : "Pegar minha localização"}</button>
+        ${f.gpsErro ? `<p>O celular não liberou a localização. Libere a localização para o navegador e tente de novo, ou abra o Google Maps, toque e segure no ponto do cliente, copie as coordenadas e cole aqui:</p>
+          <input type="text" id="vgeo-${k}" placeholder="-3.0712, -60.0251" aria-label="Coordenadas do cliente">
+          <button class="btn" data-a="vgeomanual" data-k="${k}">Usar essas coordenadas</button>` : ""}
+      </div>
+      <div class="passo ${texto.trim().length >= 10 ? "ok" : ""}">
+        <label class="ptit" for="vtxt-${k}">3. Feedback do cliente</label>
+        <textarea id="vtxt-${k}" placeholder="Ex.: falei com o dono, já compra iogurte de outra marca, pediu para voltar sexta com tabela">${esc(texto)}</textarea>
+        <span class="sub">Mínimo de 10 letras.</span>
+      </div>
+      <div class="acoes"><button class="btn pri" data-a="vsalvar" data-k="${k}" ${pronto ? "" : "disabled"}>Salvar visita</button><button class="btn" data-a="fechar" data-k="${k}">Cancelar</button></div>
+    </div>`;
+  }
+  if (painel === "hist") extra = `<div class="painel">
+      ${fbs.map(f => `<div class="fb"><span class="quem">${esc(f.rca)} · ${esc(dmh(f.em))}</span><span class="txt">${esc(f.texto)}</span></div>`).join("") || "<p>Nenhuma visita registrada ainda.</p>"}
+      <button class="btn" data-a="fechar" data-k="${k}">Fechar</button></div>`;
   return `<article class="cli">
     <div class="chead">
       <div class="cnome">${esc(c.nome)}<small>Cód. ${k}${c.razao && c.razao !== c.nome ? " · " + esc(c.razao) : ""}</small></div>
@@ -261,9 +284,7 @@ function cartao(c) {
     <div class="acoes">
       <a class="btn pri" href="${esc(mapsUrl(c))}" target="_blank" rel="noopener">Abrir no Maps</a>
       <button class="btn" data-a="visita" data-k="${k}">Registrar visita</button>
-      <label class="btn">${c.foto ? "Trocar foto" : "Foto da fachada"}<input type="file" accept="image/*" capture="environment" data-a="foto" data-k="${k}" hidden></label>
-      <button class="btn" data-a="geo" data-k="${k}">Atualizar localização</button>
-      <button class="btn" data-a="fb" data-k="${k}" style="grid-column:1/-1">Feedbacks${fbs.length ? " (" + fbs.length + ")" : ""}</button>
+      <button class="btn" data-a="hist" data-k="${k}" style="grid-column:1/-1">Histórico de visitas${fbs.length ? " (" + fbs.length + ")" : ""}</button>
     </div>
     ${extra}
   </article>`;
@@ -283,12 +304,9 @@ function parseCoord(t) {
   const m = t.match(/(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/) || t.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   return m ? { lat: +m[1], lng: +m[2] } : null;
 }
-async function salvarGeo(k, g) {
-  const r = await rpc("salvar_localizacao", { ...auth(), p_codcli: +k, p_lat: g.lat, p_lng: g.lng });
-  if (!r.ok) return falhou(r);
-  cli(k).geo = { ...g, em: new Date().toISOString(), rca: S.rca };
-  delete S.painel[k]; render(); toast("Localização salva");
-}
+const naManaus = g => g.lat > -4 && g.lat < -2.5 && g.lng > -61 && g.lng < -59.5;
+const form = k => (S.form[k] = S.form[k] || {});
+function limparForm(k) { const f = S.form[k]; if (f && f.prev) URL.revokeObjectURL(f.prev); delete S.form[k]; }
 async function reduzir(file) {
   const url = URL.createObjectURL(file);
   try {
@@ -309,59 +327,66 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
   const k = b.dataset.k, a = b.dataset.a;
   try {
-    if (a === "visita") {
-      b.disabled = true;
-      const r = await rpc("registrar_visita", { ...auth(), p_codcli: +k });
-      if (!r.ok) { b.disabled = false; return falhou(r); }
-      const c = cli(k), antes = c.ult_visita;
-      c.visitas++; c.ult_visita = { id: r.id, em: new Date().toISOString(), rca: S.rca }; render();
-      toast(`Visita registrada em ${c.nome}`, async () => {
-        const d = await rpc("desfazer_visita", { ...auth(), p_id: r.id }).catch(() => ({ ok: false }));
-        if (d.ok) { c.visitas--; c.ult_visita = antes; render(); toast("Visita desfeita"); } else toast("Não deu para desfazer");
-      });
-    } else if (a === "geo" || a === "fb") { S.painel[k] = S.painel[k] === a ? "" : a; render(); }
-    else if (a === "fechar") { delete S.painel[k]; render(); }
-    else if (a === "gpssalvar") {
-      const g = parseCoord(document.getElementById("geo-" + k).value);
-      if (!g) return toast("Não reconheci as coordenadas. Cole no formato -3.0712, -60.0251");
-      await salvarGeo(k, g);
-    } else if (a === "gpsauto") {
-      if (!navigator.geolocation) return toast("Este celular não libera a localização. Cole as coordenadas do Maps.");
+    if (a === "visita" || a === "hist") { S.painel[k] = S.painel[k] === a ? "" : a; render(); }
+    else if (a === "fechar") { if (S.painel[k] === "visita") limparForm(k); delete S.painel[k]; render(); }
+    else if (a === "vgps") {
+      if (!navigator.geolocation) { form(k).gpsErro = true; return render(); }
       b.disabled = true; b.textContent = "Buscando localização…";
       navigator.geolocation.getCurrentPosition(
-        p => salvarGeo(k, { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }).catch(() => toast("Não consegui salvar. Tente de novo.")),
-        () => { b.disabled = false; b.textContent = "Usar minha localização"; toast("Localização bloqueada. Libere a localização para o navegador ou cole as coordenadas."); },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
-    } else if (a === "fbsalvar") {
-      const t = document.getElementById("fbtxt-" + k).value.trim();
-      if (!t) return toast(ERROS.vazio);
-      b.disabled = true;
-      const r = await rpc("salvar_feedback", { ...auth(), p_codcli: +k, p_texto: t });
-      if (!r.ok) { b.disabled = false; return falhou(r); }
-      cli(k).feedbacks.unshift({ texto: t, em: new Date().toISOString(), rca: S.rca }); delete S.rascunho[k]; render(); toast("Feedback salvo");
+        p => {
+          const g = { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6), acc: Math.round(p.coords.accuracy || 0), origem: "gps" };
+          if (!naManaus(g)) { form(k).gpsErro = true; render(); return toast("A localização veio fora de Manaus. Tente de novo."); }
+          form(k).geo = g; form(k).gpsErro = false; render();
+        },
+        () => { form(k).gpsErro = true; render(); },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    } else if (a === "vgeomanual") {
+      const g = parseCoord(document.getElementById("vgeo-" + k).value);
+      if (!g) return toast("Não reconheci as coordenadas. Cole no formato -3.0712, -60.0251");
+      if (!naManaus(g)) return toast(ERROS.fora);
+      form(k).geo = { ...g, origem: "manual" }; render();
+    } else if (a === "vsalvar") {
+      const f = form(k), t = (f.texto || "").trim();
+      if (!f.blob || !f.geo || t.length < 10) return toast("Preencha os 3 itens: foto, localização e feedback.");
+      b.disabled = true; b.textContent = "Salvando…";
+      const caminho = f.caminho || `${k}/${uuid()}.jpg`;
+      if (!f.caminho) {
+        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/fachadas/${caminho}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: f.blob });
+        if (!up.ok) throw new Error("upload");
+        f.caminho = caminho; // se o registro falhar, a mesma foto é reaproveitada na próxima tentativa
+      }
+      const r = await rpc("registrar_visita", { ...auth(), p_codcli: +k, p_texto: t, p_caminho: caminho, p_lat: f.geo.lat, p_lng: f.geo.lng, p_origem: f.geo.origem });
+      if (!r.ok) { b.disabled = false; b.textContent = "Salvar visita"; return falhou(r); }
+      const c = cli(k), em = new Date().toISOString();
+      c.visitas++; c.ult_visita = { id: r.id, em, rca: S.rca }; c.foto = { caminho, em, rca: S.rca };
+      c.geo = { lat: f.geo.lat, lng: f.geo.lng, em, rca: S.rca }; c.feedbacks.unshift({ texto: t, em, rca: S.rca });
+      limparForm(k); delete S.painel[k]; render(); toast(`Visita registrada em ${c.nome}`);
     }
   } catch { b.disabled = false; toast("Sem internet. Tente de novo quando tiver sinal."); }
 });
 
 document.addEventListener("change", async e => {
-  const f = e.target.closest('input[data-a="foto"]');
+  const f = e.target.closest('input[data-a="vfoto"]');
   if (!f || !f.files[0]) return;
   const k = f.dataset.k;
-  toast("Enviando foto…");
   try {
     const blob = await reduzir(f.files[0]);
-    const caminho = `${k}/${uuid()}.jpg`;
-    const up = await fetch(`${SUPABASE_URL}/storage/v1/object/fachadas/${caminho}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: blob });
-    if (!up.ok) throw new Error("upload");
-    const r = await rpc("salvar_foto", { ...auth(), p_codcli: +k, p_caminho: caminho });
-    if (!r.ok) return falhou(r);
-    cli(k).foto = { caminho, em: new Date().toISOString(), rca: S.rca }; render(); toast("Foto salva");
-  } catch { toast("Não consegui enviar a foto. Tente de novo."); }
+    const st = form(k);
+    if (st.prev) URL.revokeObjectURL(st.prev);
+    st.blob = blob; st.prev = URL.createObjectURL(blob); delete st.caminho;
+    render();
+  } catch { toast("Não consegui ler a foto. Tire de novo."); }
   f.value = "";
 });
 document.addEventListener("input", e => {
   if (e.target.id === "busca") { S.busca = e.target.value; render(); }
-  if (e.target.id && e.target.id.startsWith("fbtxt-")) S.rascunho[e.target.id.slice(6)] = e.target.value;
+  if (e.target.id && e.target.id.startsWith("vtxt-")) {
+    const k = e.target.id.slice(5), st = form(k); st.texto = e.target.value;
+    const ok = st.texto.trim().length >= 10;
+    e.target.closest(".passo").classList.toggle("ok", ok);
+    const bt = document.querySelector(`button[data-a="vsalvar"][data-k="${k}"]`);
+    if (bt) bt.disabled = !(st.blob && st.geo && ok);
+  }
 });
 document.addEventListener("toggle", e => {
   const d = e.target; if (!d.classList || !d.classList.contains("bairro")) return;
