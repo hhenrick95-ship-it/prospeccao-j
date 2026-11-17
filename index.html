@@ -75,6 +75,16 @@ details[open] > summary .bnome::before { content: "▾ " }
 .fotolegenda { font-size: 12px; color: var(--ink2) }
 .painel { display: grid; gap: 8px; padding: 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line) }
 .painel p { margin: 0; font-size: 13px; color: var(--ink2) }
+.fotos3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px }
+.fotos3 img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; display: block }
+.slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.slot { display: grid; gap: 2px; justify-items: center; text-align: center; cursor: pointer; padding: 6px; border-radius: 8px; border: 1px dashed var(--ink2); background: var(--surface); min-width: 0 }
+.slot.tem { border-style: solid; border-color: var(--accent) }
+.slot img, .slot .mais { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px }
+.slot .mais { display: grid; place-items: center; font-size: 28px; color: var(--ink2); background: var(--bg) }
+.slot .snome { font-size: 12px; font-weight: 600; line-height: 1.2 }
+.slot .sacao { font-size: 11.5px; color: var(--accent) }
+.slot:focus-within { outline: 2px solid var(--accent); outline-offset: 2px }
 .passo { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line) }
 .passo .ptit { font-weight: 600; color: var(--ink2) }
 .passo.ok .ptit { color: var(--accent) }
@@ -232,18 +242,20 @@ function render() {
 
 function cartao(c) {
   const k = String(c.codcli), p = pos(c), painel = S.painel[k] || "", fbs = c.feedbacks;
-  const foto = c.foto ? `<img class="foto" src="${esc(fotoUrl(c.foto.caminho))}" alt="Fachada de ${esc(c.nome)}" loading="lazy" data-zoom="${esc(fotoUrl(c.foto.caminho))}">
-      <div class="fotolegenda">Foto de ${esc(dmh(c.foto.em))} · ${esc(c.foto.rca)}</div>` : "";
+  const foto = c.foto ? `<div class="fotos3">${c.foto.caminhos.map((cm, i) => `<img src="${esc(fotoUrl(cm))}" alt="Foto ${i + 1} de ${esc(c.nome)}" loading="lazy" data-zoom="${esc(fotoUrl(cm))}">`).join("")}</div>
+      <div class="fotolegenda">Fotos da última visita · ${esc(dmh(c.foto.em))} · ${esc(c.foto.rca)}</div>` : "";
   let extra = "";
   if (painel === "visita") {
-    const f = S.form[k] || {}, texto = f.texto || "";
-    const pronto = f.blob && f.geo && texto.trim().length >= 10;
+    const f = S.form[k] || {}, texto = f.texto || "", fs = f.fotos || [];
+    const pronto = fotosOk(f) && f.geo && texto.trim().length >= 10;
     extra = `<div class="painel">
-      <p><b style="color:var(--ink)">Registrar visita</b> · os 3 itens são obrigatórios</p>
-      <div class="passo ${f.blob ? "ok" : ""}">
-        <span class="ptit">1. Foto da fachada</span>
-        ${f.prev ? `<img class="foto" src="${esc(f.prev)}" alt="Foto tirada agora">` : ""}
-        <label class="btn ${f.blob ? "" : "pri"}">${f.blob ? "Tirar outra foto" : "Tirar foto da fachada"}<input type="file" accept="image/*" capture="environment" data-a="vfoto" data-k="${k}" hidden></label>
+      <p><b style="color:var(--ink)">Registrar visita</b> · tudo é obrigatório</p>
+      <div class="passo ${fotosOk(f) ? "ok" : ""}">
+        <span class="ptit">1. Três fotos (${fs.filter(Boolean).length} de 3)</span>
+        <div class="slots">${FOTOS.map((nome, i) => `<label class="slot ${fs[i] ? "tem" : ""}">
+          ${fs[i] ? `<img src="${esc(fs[i].prev)}" alt="${nome}">` : `<span class="mais">+</span>`}
+          <span class="snome">${nome}</span><span class="sacao">${fs[i] ? "Trocar" : "Tirar foto"}</span>
+          <input type="file" accept="image/*" capture="environment" data-a="vfoto" data-k="${k}" data-i="${i}" hidden></label>`).join("")}</div>
       </div>
       <div class="passo ${f.geo ? "ok" : ""}">
         <span class="ptit">2. Localização do cliente</span>
@@ -306,7 +318,9 @@ function parseCoord(t) {
 }
 const naManaus = g => g.lat > -4 && g.lat < -2.5 && g.lng > -61 && g.lng < -59.5;
 const form = k => (S.form[k] = S.form[k] || {});
-function limparForm(k) { const f = S.form[k]; if (f && f.prev) URL.revokeObjectURL(f.prev); delete S.form[k]; }
+const FOTOS = ["Fachada", "Interior", "Geladeira ou gôndola"];
+const fotosOk = f => !!(f.fotos && FOTOS.every((_, i) => f.fotos[i]));
+function limparForm(k) { const f = S.form[k]; (f && f.fotos || []).forEach(x => x && URL.revokeObjectURL(x.prev)); delete S.form[k]; }
 async function reduzir(file) {
   const url = URL.createObjectURL(file);
   try {
@@ -347,18 +361,23 @@ document.addEventListener("click", async e => {
       form(k).geo = { ...g, origem: "manual" }; render();
     } else if (a === "vsalvar") {
       const f = form(k), t = (f.texto || "").trim();
-      if (!f.blob || !f.geo || t.length < 10) return toast("Preencha os 3 itens: foto, localização e feedback.");
-      b.disabled = true; b.textContent = "Salvando…";
-      const caminho = f.caminho || `${k}/${uuid()}.jpg`;
-      if (!f.caminho) {
-        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/fachadas/${caminho}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: f.blob });
+      if (!fotosOk(f) || !f.geo || t.length < 10) return toast("Preencha tudo: 3 fotos, localização e feedback.");
+      b.disabled = true;
+      for (let i = 0; i < f.fotos.length; i++) {
+        const x = f.fotos[i];
+        if (x.caminho) continue; // já enviada numa tentativa anterior
+        b.textContent = `Enviando foto ${i + 1} de 3…`;
+        const cm = `${k}/${uuid()}.jpg`;
+        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/fachadas/${cm}`, { method: "POST", headers: { ...H, "Content-Type": "image/jpeg" }, body: x.blob });
         if (!up.ok) throw new Error("upload");
-        f.caminho = caminho; // se o registro falhar, a mesma foto é reaproveitada na próxima tentativa
+        x.caminho = cm;
       }
-      const r = await rpc("registrar_visita", { ...auth(), p_codcli: +k, p_texto: t, p_caminho: caminho, p_lat: f.geo.lat, p_lng: f.geo.lng, p_origem: f.geo.origem });
+      b.textContent = "Salvando…";
+      const caminhos = f.fotos.map(x => x.caminho);
+      const r = await rpc("registrar_visita", { ...auth(), p_codcli: +k, p_texto: t, p_caminhos: caminhos, p_lat: f.geo.lat, p_lng: f.geo.lng, p_origem: f.geo.origem });
       if (!r.ok) { b.disabled = false; b.textContent = "Salvar visita"; return falhou(r); }
       const c = cli(k), em = new Date().toISOString();
-      c.visitas++; c.ult_visita = { id: r.id, em, rca: S.rca }; c.foto = { caminho, em, rca: S.rca };
+      c.visitas++; c.ult_visita = { id: r.id, em, rca: S.rca }; c.foto = { caminhos, em, rca: S.rca };
       c.geo = { lat: f.geo.lat, lng: f.geo.lng, em, rca: S.rca }; c.feedbacks.unshift({ texto: t, em, rca: S.rca });
       limparForm(k); delete S.painel[k]; render(); toast(`Visita registrada em ${c.nome}`);
     }
@@ -368,12 +387,13 @@ document.addEventListener("click", async e => {
 document.addEventListener("change", async e => {
   const f = e.target.closest('input[data-a="vfoto"]');
   if (!f || !f.files[0]) return;
-  const k = f.dataset.k;
+  const k = f.dataset.k, i = +f.dataset.i;
   try {
     const blob = await reduzir(f.files[0]);
     const st = form(k);
-    if (st.prev) URL.revokeObjectURL(st.prev);
-    st.blob = blob; st.prev = URL.createObjectURL(blob); delete st.caminho;
+    st.fotos = st.fotos || [null, null, null];
+    if (st.fotos[i]) URL.revokeObjectURL(st.fotos[i].prev);
+    st.fotos[i] = { blob, prev: URL.createObjectURL(blob) };
     render();
   } catch { toast("Não consegui ler a foto. Tire de novo."); }
   f.value = "";
@@ -385,7 +405,7 @@ document.addEventListener("input", e => {
     const ok = st.texto.trim().length >= 10;
     e.target.closest(".passo").classList.toggle("ok", ok);
     const bt = document.querySelector(`button[data-a="vsalvar"][data-k="${k}"]`);
-    if (bt) bt.disabled = !(st.blob && st.geo && ok);
+    if (bt) bt.disabled = !(fotosOk(st) && st.geo && ok);
   }
 });
 document.addEventListener("toggle", e => {
