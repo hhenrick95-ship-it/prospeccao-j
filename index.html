@@ -78,13 +78,16 @@ details[open] > summary .bnome::before { content: "▾ " }
 .fotos3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px }
 .fotos3 img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; display: block }
 .slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
-.slot { display: grid; gap: 2px; justify-items: center; text-align: center; cursor: pointer; padding: 6px; border-radius: 8px; border: 1px dashed var(--ink2); background: var(--surface); min-width: 0 }
+.slot { font: inherit; color: var(--ink); display: grid; gap: 2px; justify-items: center; text-align: center; cursor: pointer; padding: 6px; border-radius: 8px; border: 1px dashed var(--ink2); background: var(--surface); min-width: 0 }
 .slot.tem { border-style: solid; border-color: var(--accent) }
 .slot img, .slot .mais { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px }
 .slot .mais { display: grid; place-items: center; font-size: 28px; color: var(--ink2); background: var(--bg) }
 .slot .snome { font-size: 12px; font-weight: 600; line-height: 1.2 }
 .slot .sacao { font-size: 11.5px; color: var(--accent) }
 .slot:focus-within { outline: 2px solid var(--accent); outline-offset: 2px }
+.camcaixa { background: var(--surface); color: var(--ink); padding: 12px; border-radius: 12px; display: grid; gap: 10px; width: min(94vw, 640px) }
+#camvideo { width: 100%; max-height: 65vh; background: #000; border-radius: 8px; object-fit: contain; display: block }
+.camcaixa .erro { color: var(--bad); margin: 0; font-size: 14px }
 .passo { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line) }
 .passo .ptit { font-weight: 600; color: var(--ink2) }
 .passo.ok .ptit { color: var(--accent) }
@@ -142,6 +145,14 @@ dialog button { margin-top: 8px; width: 100% }
   <main><div class="wrap" id="app"><div class="msg">Carregando os clientes…</div></div></main>
 </section>
 
+<dialog id="cam" aria-labelledby="camtitulo">
+  <div class="camcaixa">
+    <strong id="camtitulo">Foto</strong>
+    <video id="camvideo" playsinline muted autoplay></video>
+    <p id="camerro" class="erro" hidden></p>
+    <div class="acoes"><button class="btn pri" id="camtirar" type="button" disabled>Tirar foto</button><button class="btn" id="camcancelar" type="button">Cancelar</button></div>
+  </div>
+</dialog>
 <dialog id="zoom"><img id="zoomimg" alt="Foto da fachada"><button class="btn" id="zoomfechar">Fechar</button></dialog>
 <div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="toastacao" hidden>Desfazer</button></div>
 
@@ -252,10 +263,10 @@ function cartao(c) {
       <p><b style="color:var(--ink)">Registrar visita</b> · tudo é obrigatório</p>
       <div class="passo ${fotosOk(f) ? "ok" : ""}">
         <span class="ptit">1. Três fotos (${fs.filter(Boolean).length} de 3)</span>
-        <div class="slots">${FOTOS.map((nome, i) => `<label class="slot ${fs[i] ? "tem" : ""}">
+        <div class="slots">${FOTOS.map((nome, i) => `<button type="button" class="slot ${fs[i] ? "tem" : ""}" data-a="vfoto" data-k="${k}" data-i="${i}">
           ${fs[i] ? `<img src="${esc(fs[i].prev)}" alt="${nome}">` : `<span class="mais">+</span>`}
-          <span class="snome">${nome}</span><span class="sacao">${fs[i] ? "Trocar" : "Tirar foto"}</span>
-          <input type="file" accept="image/*" capture="environment" data-a="vfoto" data-k="${k}" data-i="${i}" hidden></label>`).join("")}</div>
+          <span class="snome">${nome}</span><span class="sacao">${fs[i] ? "Tirar de novo" : "Tirar foto"}</span></button>`).join("")}</div>
+        <span class="sub">A câmera abre aqui no app. Fotos da galeria não são aceitas.</span>
       </div>
       <div class="passo ${f.geo ? "ok" : ""}">
         <span class="ptit">2. Localização do cliente</span>
@@ -341,6 +352,7 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("button[data-a]"); if (!b) return;
   const k = b.dataset.k, a = b.dataset.a;
   try {
+    if (a === "vfoto") return abrirCamera(k, +b.dataset.i);
     if (a === "visita" || a === "hist") { S.painel[k] = S.painel[k] === a ? "" : a; render(); }
     else if (a === "fechar") { if (S.painel[k] === "visita") limparForm(k); delete S.painel[k]; render(); }
     else if (a === "vgps") {
@@ -384,20 +396,48 @@ document.addEventListener("click", async e => {
   } catch { b.disabled = false; toast("Sem internet. Tente de novo quando tiver sinal."); }
 });
 
-document.addEventListener("change", async e => {
-  const f = e.target.closest('input[data-a="vfoto"]');
-  if (!f || !f.files[0]) return;
-  const k = f.dataset.k, i = +f.dataset.i;
+// ---------- câmera ao vivo (sem galeria: a foto é sempre tirada na hora) ----------
+const CAM = { stream: null, k: null, i: null };
+function pararCamera() { if (CAM.stream) CAM.stream.getTracks().forEach(t => t.stop()); CAM.stream = null; $("#camvideo").srcObject = null; }
+async function abrirCamera(k, i) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast("Este navegador não abre a câmera. Use o Chrome (Android) ou o Safari (iPhone).");
+  CAM.k = k; CAM.i = i;
+  $("#camtitulo").textContent = `${FOTOS[i]} · ${cli(k).nome}`;
+  $("#camerro").hidden = true; $("#camtirar").disabled = true;
+  $("#cam").showModal();
   try {
-    const blob = await reduzir(f.files[0]);
-    const st = form(k);
-    st.fotos = st.fotos || [null, null, null];
-    if (st.fotos[i]) URL.revokeObjectURL(st.fotos[i].prev);
-    st.fotos[i] = { blob, prev: URL.createObjectURL(blob) };
-    render();
-  } catch { toast("Não consegui ler a foto. Tire de novo."); }
-  f.value = "";
-});
+    CAM.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    const v = $("#camvideo"); v.srcObject = CAM.stream; await v.play();
+    $("#camtirar").disabled = false;
+  } catch {
+    $("#camerro").hidden = false;
+    $("#camerro").textContent = "O celular não liberou a câmera. Toque no cadeado ao lado do endereço do site, permita a Câmera e tente de novo.";
+  }
+}
+function carimbo(ctx, w, h, k) {
+  const agora = new Date(), txt = `${agora.toLocaleDateString("pt-BR")} ${agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} · Cód. ${k} · ${S.rca}`;
+  const fs = Math.max(16, Math.round(w / 40));
+  ctx.font = `600 ${fs}px system-ui, sans-serif`;
+  const pad = Math.round(fs * 0.5), tw = ctx.measureText(txt).width;
+  ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(0, h - fs - pad * 2, tw + pad * 2, fs + pad * 2);
+  ctx.fillStyle = "#fff"; ctx.textBaseline = "bottom"; ctx.fillText(txt, pad, h - pad);
+}
+$("#camtirar").onclick = async () => {
+  const v = $("#camvideo"), k = CAM.k, i = CAM.i;
+  if (!v.videoWidth) return;
+  const f = Math.min(1, 1600 / Math.max(v.videoWidth, v.videoHeight));
+  const cv = document.createElement("canvas"); cv.width = Math.round(v.videoWidth * f); cv.height = Math.round(v.videoHeight * f);
+  const ctx = cv.getContext("2d"); ctx.drawImage(v, 0, 0, cv.width, cv.height); carimbo(ctx, cv.width, cv.height, k);
+  const blob = await new Promise(ok => cv.toBlob(ok, "image/jpeg", 0.82));
+  pararCamera(); $("#cam").close();
+  if (!blob) return toast("Não consegui tirar a foto. Tente de novo.");
+  const st = form(k); st.fotos = st.fotos || [null, null, null];
+  if (st.fotos[i]) URL.revokeObjectURL(st.fotos[i].prev);
+  st.fotos[i] = { blob, prev: URL.createObjectURL(blob) };
+  render();
+};
+$("#camcancelar").onclick = () => { pararCamera(); $("#cam").close(); };
+$("#cam").addEventListener("close", pararCamera);
 document.addEventListener("input", e => {
   if (e.target.id === "busca") { S.busca = e.target.value; render(); }
   if (e.target.id && e.target.id.startsWith("vtxt-")) {
