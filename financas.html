@@ -34,7 +34,13 @@ h2 { font-family: var(--display); font-size: 18px; margin: 0 0 8px }
 .mes strong { font-family: var(--display); font-size: 19px; min-width: 132px; text-align: center }
 main .wrap { padding-block: 14px 96px; display: grid; gap: 12px }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px }
-.resumo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.resumo { display: grid; gap: 10px }
+.extrato { display: grid; gap: 6px; font-variant-numeric: tabular-nums }
+.extrato > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 15px }
+.extrato span { color: var(--ink2) }
+.extrato b { font-size: 17px; white-space: nowrap }
+.extrato .sub-total { border-top: 1px dashed var(--line); padding-top: 6px }
+.extrato .sub-total span { color: var(--ink); font-weight: 600 }
 .kpi { display: grid; gap: 2px }
 .kpi span { font-size: 12px; color: var(--ink2); text-transform: uppercase; letter-spacing: .05em }
 .kpi b { font-family: var(--display); font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums }
@@ -214,27 +220,31 @@ const somaMes = m => {
   const s = x.filter(i => i.tipo === "saida").reduce((a, i) => a + i.valor, 0);
   return { x, e, s, saldo: e - s };
 };
+// saldo de tudo o que foi lançado antes do mês m (o que "sobrou" e passa para m)
+const saldoAte = m => S.itens.filter(i => i.data.slice(0, 7) < m).reduce((a, i) => a + (i.tipo === "entrada" ? i.valor : -i.valor), 0);
 const addMes = (m, n) => { const d = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1 + n, 1); return ymd(d).slice(0, 7); };
 const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
 
 function render() {
   const m = S.mes, r = somaMes(m);
   $("#mesNome").textContent = nomeMes(m);
-  const ano = m.slice(0, 4);
-  let anoSaldo = 0; for (let k = 1; k <= +m.slice(5, 7); k++) anoSaldo += somaMes(`${ano}-${String(k).padStart(2, "0")}`).saldo;
-  const pct = r.e > 0 ? Math.round(100 * r.saldo / r.e) : null;
+  const ant = saldoAte(m), disp = ant + r.e, atual = disp - r.s;
   $("#resumo").innerHTML = `
-    <div class="kpi"><span>Ganhos</span><b class="pos">${brl(r.e)}</b></div>
-    <div class="kpi"><span>Gastos</span><b class="neg">${brl(r.s)}</b></div>
-    <div class="kpi saldo"><span>Sobrou no mês</span><b class="${cls(r.saldo)}">${brl(r.saldo)}</b>
-      <small>${pct === null ? "Sem ganhos lançados neste mês" : `${pct}% do que você ganhou`} · Acumulado em ${ano}: <span class="${cls(anoSaldo)}">${brl(anoSaldo)}</span></small></div>`;
+    <div class="extrato">
+      <div><span>Saldo do mês anterior</span><b class="${cls(ant)}">${brl(ant)}</b></div>
+      <div><span>+ Recebido no mês</span><b class="pos">${brl(r.e)}</b></div>
+      <div class="sub-total"><span>= Disponível</span><b class="${cls(disp)}">${brl(disp)}</b></div>
+      <div><span>− Gastos do mês</span><b class="neg">${brl(r.s)}</b></div>
+    </div>
+    <div class="kpi saldo"><span>Saldo atual</span><b class="${cls(atual)}">${brl(atual)}</b>
+      <small>${r.saldo >= 0 ? "Sobraram" : "Faltaram"} ${brl(Math.abs(r.saldo))} só com o que entrou e saiu neste mês. Esse saldo passa para o mês seguinte.</small></div>`;
   cats("#catGanhos", r.x.filter(i => i.tipo === "entrada"), r.e, "var(--in)");
   cats("#catGastos", r.x.filter(i => i.tipo === "saida"), r.s, "var(--out)");
   // histórico
-  let h = `<tr><th>Mês</th><th>Ganhos</th><th>Gastos</th><th>Sobrou</th></tr>`;
+  let h = `<tr><th>Mês</th><th>Recebido</th><th>Gastos</th><th>Saldo final</th></tr>`;
   for (let k = 5; k >= 0; k--) {
-    const mm = addMes(m, -k), q = somaMes(mm);
-    h += `<tr class="${k === 0 ? "atual" : ""}"><td>${nomeMes(mm, true)}</td><td>${brl(q.e)}</td><td>${brl(q.s)}</td><td class="${cls(q.saldo)}">${brl(q.saldo)}</td></tr>`;
+    const mm = addMes(m, -k), q = somaMes(mm), fim = saldoAte(addMes(mm, 1));
+    h += `<tr class="${k === 0 ? "atual" : ""}"><td>${nomeMes(mm, true)}</td><td>${brl(q.e)}</td><td>${brl(q.s)}</td><td class="${cls(fim)}">${brl(fim)}</td></tr>`;
   }
   $("#hist").innerHTML = h;
   // lista
