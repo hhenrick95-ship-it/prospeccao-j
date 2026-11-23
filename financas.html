@@ -7,11 +7,11 @@
 <meta name="theme-color" content="#0b6e4f">
 <title>Minhas finanças</title>
 <style>
-/* Controle pessoal, uma coluna no celular: mês no topo, resumo do mês, botão de lançar, categorias, histórico de 6 meses e a lista. */
+/* Controle pessoal, uma coluna no celular: previsão "vai dar para pagar?" no topo, depois o mês (extrato, categorias, 6 meses, lista). */
 :root {
   --bg: #f3f5f4; --surface: #ffffff; --ink: #14201c; --ink2: #56635e; --line: #dde3e0;
   --accent: #0b6e4f; --accent-ink: #ffffff; --accent-soft: #e2f1eb;
-  --in: #0b6e4f; --in-soft: #e2f1eb; --out: #a32020; --out-soft: #fbe5e3;
+  --in: #0b6e4f; --in-soft: #e2f1eb; --out: #a32020; --out-soft: #fbe5e3; --warn: #9a5b00; --warn-soft: #fbefd9;
   --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --r: 10px; color-scheme: light;
@@ -19,7 +19,7 @@
 @media (prefers-color-scheme: dark) { :root {
   --bg: #0f1513; --surface: #18201d; --ink: #e8eeeb; --ink2: #9aa8a2; --line: #2a3531;
   --accent: #3fbf8f; --accent-ink: #06130e; --accent-soft: #173229;
-  --in: #3fbf8f; --in-soft: #173229; --out: #ff8a80; --out-soft: #3a1c1a; color-scheme: dark } }
+  --in: #3fbf8f; --in-soft: #173229; --out: #ff8a80; --out-soft: #3a1c1a; --warn: #f0b45a; --warn-soft: #33270f; color-scheme: dark } }
 * { box-sizing: border-box }
 html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px) }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.4 }
@@ -34,6 +34,7 @@ h2 { font-family: var(--display); font-size: 18px; margin: 0 0 8px }
 .mes strong { font-family: var(--display); font-size: 19px; min-width: 132px; text-align: center }
 main .wrap { padding-block: 14px 96px; display: grid; gap: 12px }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px }
+.secao { font-family: var(--display); font-size: 15px; color: var(--ink2); text-transform: uppercase; letter-spacing: .06em; margin: 8px 2px -4px }
 .resumo { display: grid; gap: 10px }
 .extrato { display: grid; gap: 6px; font-variant-numeric: tabular-nums }
 .extrato > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 15px }
@@ -44,21 +45,46 @@ main .wrap { padding-block: 14px 96px; display: grid; gap: 12px }
 .kpi { display: grid; gap: 2px }
 .kpi span { font-size: 12px; color: var(--ink2); text-transform: uppercase; letter-spacing: .05em }
 .kpi b { font-family: var(--display); font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums }
-.kpi.saldo { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid var(--line) }
+.kpi.saldo { padding-top: 10px; border-top: 1px solid var(--line) }
 .kpi.saldo b { font-size: 34px }
 .pos { color: var(--in) } .neg { color: var(--out) }
 .kpi small { font-size: 12.5px; color: var(--ink2) }
+/* previsão */
+.alerta { display: grid; gap: 4px; padding: 12px; border-radius: 8px; border: 1px solid }
+.alerta strong { font-size: 16px; line-height: 1.3 }
+.alerta span { font-size: 13.5px }
+.alerta.ok { background: var(--in-soft); border-color: var(--in); color: var(--in) }
+.alerta.ruim { background: var(--out-soft); border-color: var(--out); color: var(--out) }
+.alerta.neutro { background: var(--bg); border-color: var(--line); color: var(--ink2) }
+.alerta span { color: var(--ink) }
+.hojesaldo { display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 4px; font-variant-numeric: tabular-nums }
+.hojesaldo span { color: var(--ink2); font-size: 13.5px }
+.hojesaldo b { font-family: var(--display); font-size: 24px }
+.fluxo { display: grid }
+.fl { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums }
+.fl:last-child { border-bottom: 0 }
+.fl .d { font-weight: 700; font-size: 14px; line-height: 1.1 }
+.fl .d small { display: block; font-weight: 500; font-size: 11px; color: var(--warn) }
+.fl .n { min-width: 0; overflow-wrap: anywhere; font-size: 14px }
+.fl .n small { display: block; color: var(--ink2); font-size: 12px }
+.fl .val { text-align: right; white-space: nowrap; font-weight: 700; font-size: 14px }
+.fl .val small { display: block; font-weight: 500; font-size: 12px; color: var(--ink2) }
+.fl .val small.neg { color: var(--out); font-weight: 700 }
+.fl.falta { background: var(--out-soft); margin: 0 -14px; padding-inline: 14px }
+.fl .marcar { grid-column: 2 / -1; justify-self: start }
 select, input { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; width: 100% }
 label { display: grid; gap: 4px; font-size: 13px; color: var(--ink2) }
 .btn { font: inherit; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer }
 .btn.pri { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
 .btn.ico { min-width: 44px; padding: 0; font-size: 20px }
 .btn.link { border: 0; background: none; color: var(--ink2); min-height: 0; padding: 4px; font-weight: 500; text-decoration: underline }
+.btn.mini { min-height: 34px; padding: 4px 12px; font-size: 13px }
 .btn.perigo { color: var(--out) }
 .btn:disabled { opacity: .55; cursor: default }
-.btn:focus-visible, input:focus-visible, select:focus-visible, .chip:focus-visible, .item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.btn:focus-visible, input:focus-visible, select:focus-visible, .chip:focus-visible, .ed:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 .fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 6; border-radius: 999px; padding: 0 20px; min-height: 52px; box-shadow: 0 4px 14px rgba(0,0,0,.18); font-size: 16px }
-.tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.par .btn[aria-pressed=true] { background: var(--ink); color: var(--surface); border-color: var(--ink) }
 .tipos .btn[aria-pressed=true][data-t=entrada] { background: var(--in); color: var(--accent-ink); border-color: var(--in) }
 .tipos .btn[aria-pressed=true][data-t=saida] { background: var(--out); color: #fff; border-color: var(--out) }
 .chips { display: flex; gap: 6px; flex-wrap: wrap }
@@ -82,10 +108,14 @@ th { font-size: 12px; color: var(--ink2); font-weight: 600 }
 th:first-child, td:first-child { text-align: left; white-space: nowrap }
 tr.atual td { font-weight: 700 }
 .dia { font-size: 12.5px; color: var(--ink2); font-weight: 600; padding: 10px 0 4px; text-transform: capitalize }
-.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; background: none; border-left: 0; border-right: 0; border-top: 0; width: 100%; font: inherit; color: inherit; text-align: left }
-.item .nome { font-weight: 600; overflow-wrap: anywhere }
-.item .nome small { display: block; font-weight: 400; color: var(--ink2); font-size: 12.5px }
-.item .v { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap }
+.item { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--line) }
+.ed { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; cursor: pointer; background: none; border: 0; padding: 0; width: 100%; font: inherit; color: inherit; text-align: left }
+.ed .nome { font-weight: 600; overflow-wrap: anywhere }
+.ed .nome small { display: block; font-weight: 400; color: var(--ink2); font-size: 12.5px }
+.ed .v { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap }
+.pend { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--warn); color: var(--warn); background: var(--warn-soft) }
+.tag.atraso { border-color: var(--out); color: var(--out); background: var(--out-soft) }
 .vazio { color: var(--ink2); font-size: 14px; padding: 8px 0 }
 .login { max-width: 360px; margin: 10vh auto 0; display: grid; gap: 12px }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: 10px; display: flex; gap: 12px; align-items: center; font-size: 14px; z-index: 20; max-width: calc(100% - 32px) }
@@ -112,20 +142,25 @@ dialog .card { max-height: 92vh; overflow: auto }
 <section id="telaApp" hidden>
   <header>
     <div class="wrap">
-      <div class="mes">
-        <button class="btn ico" id="mesAnt" aria-label="Mês anterior">‹</button>
-        <strong id="mesNome"></strong>
-        <button class="btn ico" id="mesProx" aria-label="Próximo mês">›</button>
-      </div>
+      <h1>Minhas finanças</h1>
       <button class="btn link" id="sair">Sair</button>
     </div>
   </header>
   <main><div class="wrap">
+    <div class="card" id="prev"></div>
+    <div class="secao">Mês</div>
+    <div class="card" style="padding:6px 8px">
+      <div class="mes" style="justify-content:center">
+        <button class="btn ico" id="mesAnt" aria-label="Mês anterior">‹</button>
+        <strong id="mesNome"></strong>
+        <button class="btn ico" id="mesProx" aria-label="Próximo mês">›</button>
+      </div>
+    </div>
     <div class="card resumo" id="resumo"></div>
-    <div class="card" id="boxGanhos"><h2>Ganhos por categoria</h2><div class="cats" id="catGanhos"></div></div>
-    <div class="card" id="boxGastos"><h2>Gastos por categoria</h2><div class="cats" id="catGastos"></div></div>
-    <div class="card"><h2>Últimos 6 meses</h2><table id="hist"></table></div>
     <div class="card"><h2>Lançamentos do mês</h2><div id="lista"></div></div>
+    <div class="card"><h2>Ganhos por categoria</h2><div class="cats" id="catGanhos"></div></div>
+    <div class="card"><h2>Gastos por categoria</h2><div class="cats" id="catGastos"></div></div>
+    <div class="card"><h2>Últimos 6 meses</h2><table id="hist"></table></div>
   </div></main>
   <button class="btn pri fab" id="novo">+ Lançar</button>
 </section>
@@ -133,21 +168,28 @@ dialog .card { max-height: 92vh; overflow: auto }
 <dialog id="dlg" aria-labelledby="dlgTitulo">
   <form class="card form" id="form" method="dialog">
     <h2 id="dlgTitulo">Novo lançamento</h2>
-    <div class="tipos" role="group" aria-label="Tipo">
+    <div class="par tipos" role="group" aria-label="Tipo">
       <button type="button" class="btn" data-t="entrada" aria-pressed="true">Ganho</button>
-      <button type="button" class="btn" data-t="saida" aria-pressed="false">Gasto</button>
+      <button type="button" class="btn" data-t="saida" aria-pressed="false">Gasto / conta</button>
     </div>
     <div class="dupla">
       <label class="valor" for="fValor">Valor (R$)<input id="fValor" inputmode="decimal" autocomplete="off" placeholder="0,00" required></label>
-      <label for="fData">Data<input id="fData" type="date" required></label>
+      <label for="fData"><span id="fDataLbl">Data</span><input id="fData" type="date" required></label>
     </div>
+    <div class="par sits" role="group" aria-label="Situação">
+      <button type="button" class="btn" data-p="1" aria-pressed="true">Já recebido</button>
+      <button type="button" class="btn" data-p="0" aria-pressed="false">A receber</button>
+    </div>
+    <label for="fRep" id="fRepBox">Repetir todo mês (parcelas de acordo, contas fixas)
+      <select id="fRep"></select>
+    </label>
     <div style="display:grid;gap:6px">
       <span class="sub">Categoria</span>
       <div class="chips" id="fChips"></div>
       <input id="fCat" list="catsUsadas" placeholder="Ou escreva outra categoria" aria-label="Categoria" maxlength="60">
       <datalist id="catsUsadas"></datalist>
     </div>
-    <label for="fDesc">Descrição (opcional)<input id="fDesc" maxlength="200" placeholder="Ex.: comissão de outubro, mercado do mês"></label>
+    <label for="fDesc">Descrição (opcional)<input id="fDesc" maxlength="180" placeholder="Ex.: acordo banco X, conta de luz"></label>
     <p class="erro" id="fErro" hidden></p>
     <div class="acoes">
       <button type="submit" class="btn pri" id="fSalvar" value="salvar">Salvar</button>
@@ -169,13 +211,15 @@ const store = { get(k) { try { return localStorage.getItem(k) } catch { return n
 const H = { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON, "Content-Type": "application/json" };
 const ERROS = { pin: "PIN errado.", bloqueado: "Muitas tentativas erradas. Espere 15 minutos.", valor: "Valor inválido.", categoria: "Escolha uma categoria.", data: "Informe a data.", rede: "Sem conexão. Confira a internet e tente de novo." };
 const CATS = {
-  entrada: ["Salário", "Comissão", "Premiação", "Bônus", "Extra", "Reembolso"],
-  saida: ["Moradia", "Alimentação", "Mercado", "Transporte", "Combustível", "Contas", "Cartão", "Saúde", "Educação", "Lazer", "Filhos", "Outros"]
+  entrada: ["Saldo inicial", "Salário", "Comissão", "Premiação", "Bônus", "Extra", "Reembolso"],
+  saida: ["Acordo", "Empréstimo", "Cartão", "Moradia", "Contas", "Mercado", "Alimentação", "Transporte", "Combustível", "Saúde", "Educação", "Lazer", "Filhos", "Outros"]
 };
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 const hoje = new Date();
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const S = { pin: store.get("fin_pin") || "", itens: [], mes: ymd(hoje).slice(0, 7), edit: null, tipo: "entrada" };
+const HOJE = ymd(hoje);
+const S = { pin: store.get("fin_pin") || "", itens: [], mes: HOJE.slice(0, 7), edit: null, tipo: "entrada", pago: true, verTodos: false };
 
 async function rpc(fn, body) {
   let r;
@@ -206,29 +250,99 @@ async function carregar() {
     return toast(ERROS.rede);
   }
   store.set("fin_pin", S.pin);
-  S.itens = r.itens.map(i => ({ ...i, valor: Number(i.valor) }));
+  S.itens = r.itens.map(i => ({ ...i, valor: Number(i.valor), pago: i.pago !== false }));
   $("#telaLogin").hidden = true; $("#telaApp").hidden = false;
   render();
 }
 
-// ---------- telas ----------
-const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+// ---------- utilidades ----------
 const nomeMes = (m, curto) => { const n = MESES[+m.slice(5, 7) - 1]; return curto ? `${n.slice(0, 3)}/${m.slice(2, 4)}` : `${n[0].toUpperCase() + n.slice(1)} ${m.slice(0, 4)}`; };
+const dm = d => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+const sinal = i => i.tipo === "entrada" ? i.valor : -i.valor;
 const somaMes = m => {
   const x = S.itens.filter(i => i.data.startsWith(m));
   const e = x.filter(i => i.tipo === "entrada").reduce((a, i) => a + i.valor, 0);
   const s = x.filter(i => i.tipo === "saida").reduce((a, i) => a + i.valor, 0);
   return { x, e, s, saldo: e - s };
 };
-// saldo de tudo o que foi lançado antes do mês m (o que "sobrou" e passa para m)
-const saldoAte = m => S.itens.filter(i => i.data.slice(0, 7) < m).reduce((a, i) => a + (i.tipo === "entrada" ? i.valor : -i.valor), 0);
+// saldo de tudo o que foi lançado antes do mês m (pago ou previsto): o que passa para m
+const saldoAte = m => S.itens.filter(i => i.data.slice(0, 7) < m).reduce((a, i) => a + sinal(i), 0);
 const addMes = (m, n) => { const d = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1 + n, 1); return ymd(d).slice(0, 7); };
-const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+// mesma data k meses depois; dia 31 vira o último dia do mês quando ele não existe
+const addMesData = (d, k) => { const y = +d.slice(0, 4), mo = +d.slice(5, 7) - 1 + k, dia = +d.slice(8, 10);
+  const ult = new Date(y, mo + 1, 0).getDate(); return ymd(new Date(y, mo, Math.min(dia, ult))); };
+const cls = v => v > 0.004 ? "pos" : v < -0.004 ? "neg" : "";
+const rotPend = i => i.tipo === "entrada" ? "a receber" : "a pagar";
+const rotFeito = i => i.tipo === "entrada" ? "Recebido" : "Pago";
 
+// ---------- previsão: vai dar para pagar? ----------
+function previsao() {
+  const saldoHoje = S.itens.filter(i => i.pago).reduce((a, i) => a + sinal(i), 0);
+  // em aberto, por data; atrasados contam como hoje; no mesmo dia entra primeiro o dinheiro e depois saem as contas
+  const pend = S.itens.filter(i => !i.pago).map(i => ({ ...i, quando: i.data < HOJE ? HOJE : i.data }))
+    .sort((a, b) => a.quando.localeCompare(b.quando) || (a.tipo === "entrada" ? -1 : 1) - (b.tipo === "entrada" ? -1 : 1) || b.valor - a.valor);
+  let bal = saldoHoje, menor = { v: saldoHoje, d: HOJE }, primeiraFalta = null;
+  for (const p of pend) {
+    bal += sinal(p); p.apos = bal;
+    if (bal < menor.v) menor = { v: bal, d: p.quando };
+    if (p.tipo === "saida" && bal < -0.004 && !primeiraFalta) primeiraFalta = p;
+  }
+  return { saldoHoje, pend, menor, primeiraFalta, fim: bal };
+}
+function renderPrev() {
+  const P = previsao();
+  const contas = P.pend.filter(p => p.tipo === "saida");
+  let alerta;
+  if (!contas.length) {
+    alerta = `<div class="alerta neutro"><strong>Nenhuma conta a pagar lançada.</strong>
+      <span>Lance seus acordos e contas como “Gasto / conta” com a situação “A pagar” e a data do vencimento. Aqui vai aparecer se o dinheiro dá em cada data.</span></div>`;
+  } else if (P.primeiraFalta) {
+    const f = P.primeiraFalta, falta = -f.apos;
+    alerta = `<div class="alerta ruim"><strong>⚠ Em ${dm(f.quando)} vai faltar ${brl(falta)}</strong>
+      <span>para pagar ${esc(f.categoria)}${f.descricao ? " · " + esc(f.descricao) : ""} (${brl(f.valor)}).
+      ${P.menor.v < -falta - 0.004 ? `O pior momento é ${dm(P.menor.d)}: faltam ${brl(-P.menor.v)} para cobrir tudo até lá.` : ""}</span></div>`;
+  } else {
+    const ult = contas[contas.length - 1];
+    alerta = `<div class="alerta ok"><strong>✓ Dá para pagar tudo o que está lançado até ${dm(ult.quando)}</strong>
+      <span>O menor saldo será ${brl(P.menor.v)} em ${dm(P.menor.d)}${P.menor.d === HOJE ? " (hoje)" : ""}.</span></div>`;
+  }
+  const lista = S.verTodos ? P.pend : P.pend.slice(0, 10);
+  const linhas = lista.map(p => {
+    const atras = p.data < HOJE;
+    return `<div class="fl${p.tipo === "saida" && p.apos < -0.004 ? " falta" : ""}">
+      <div class="d">${dm(p.quando)}${atras ? `<small>atrasado ${dm(p.data)}</small>` : ""}</div>
+      <div class="n">${esc(p.categoria)}${p.descricao ? `<small>${esc(p.descricao)}</small>` : ""}</div>
+      <div class="val ${p.tipo === "entrada" ? "pos" : "neg"}">${p.tipo === "entrada" ? "+" : "−"} ${brl(p.valor)}
+        <small class="${p.apos < -0.004 ? "neg" : ""}">saldo ${brl(p.apos)}</small></div>
+      <button class="btn mini marcar" data-id="${esc(p.id)}">✓ ${rotFeito(p)}</button>
+    </div>`;
+  }).join("");
+  $("#prev").innerHTML = `<h2>Vai dar para pagar?</h2>${alerta}
+    <div class="hojesaldo"><span>Saldo hoje (já recebido − já pago)</span><b class="${cls(P.saldoHoje)}">${brl(P.saldoHoje)}</b></div>
+    ${S.itens.some(i => i.pago) ? "" : `<p class="sub" style="margin:0 0 8px">Quanto você tem hoje na conta? Lance como Ganho, categoria “Saldo inicial”, data de hoje, “Já recebido”. A previsão parte desse valor.</p>`}
+    ${P.pend.length ? `<div class="fluxo">${linhas}</div>
+      ${P.pend.length > 10 ? `<button class="btn link" id="verTodos">${S.verTodos ? "Ver menos" : `Ver todos (${P.pend.length})`}</button>` : ""}
+      <p class="sub" style="margin:8px 0 0">Saldo depois de cada lançamento, na ordem das datas (no mesmo dia, o que entra vem antes). Toque em “✓ Pago” ou “✓ Recebido” quando acontecer.</p>` : ""}`;
+  const vt = $("#verTodos"); if (vt) vt.onclick = () => { S.verTodos = !S.verTodos; renderPrev(); };
+}
+$("#prev").addEventListener("click", e => { const b = e.target.closest(".marcar"); if (b) marcar(b.dataset.id, true); });
+
+async function marcar(id, pago) {
+  const it = S.itens.find(i => i.id === id); if (!it) return;
+  const r = await rpc("fin_marcar", { p_pin: S.pin, p_id: id, p_pago: pago });
+  if (!r.ok) return toast(ERROS[r.erro] || "Não salvou. Tente de novo.");
+  await carregar();
+  toast(pago ? `${rotFeito(it)}: ${it.categoria}` : "Voltou para em aberto.", pago ? async () => { await rpc("fin_marcar", { p_pin: S.pin, p_id: id, p_pago: false }); await carregar(); } : null);
+}
+
+// ---------- mês ----------
 function render() {
+  renderPrev();
   const m = S.mes, r = somaMes(m);
   $("#mesNome").textContent = nomeMes(m);
-  const ant = saldoAte(m), disp = ant + r.e, atual = disp - r.s;
+  const ant = saldoAte(m), disp = ant + r.e, fim = disp - r.s;
+  const aPagar = r.x.filter(i => !i.pago && i.tipo === "saida").reduce((a, i) => a + i.valor, 0);
+  const aReceber = r.x.filter(i => !i.pago && i.tipo === "entrada").reduce((a, i) => a + i.valor, 0);
   $("#resumo").innerHTML = `
     <div class="extrato">
       <div><span>Saldo do mês anterior</span><b class="${cls(ant)}">${brl(ant)}</b></div>
@@ -236,27 +350,28 @@ function render() {
       <div class="sub-total"><span>= Disponível</span><b class="${cls(disp)}">${brl(disp)}</b></div>
       <div><span>− Gastos do mês</span><b class="neg">${brl(r.s)}</b></div>
     </div>
-    <div class="kpi saldo"><span>Saldo atual</span><b class="${cls(atual)}">${brl(atual)}</b>
-      <small>${r.saldo >= 0 ? "Sobraram" : "Faltaram"} ${brl(Math.abs(r.saldo))} só com o que entrou e saiu neste mês. Esse saldo passa para o mês seguinte.</small></div>`;
+    <div class="kpi saldo"><span>Saldo no fim do mês</span><b class="${cls(fim)}">${brl(fim)}</b>
+      <small>${r.saldo >= 0 ? "Sobraram" : "Faltaram"} ${brl(Math.abs(r.saldo))} só com o que entra e sai neste mês.
+      ${aPagar || aReceber ? `Inclui ${aPagar ? brl(aPagar) + " a pagar" : ""}${aPagar && aReceber ? " e " : ""}${aReceber ? brl(aReceber) + " a receber" : ""} ainda em aberto.` : ""}</small></div>`;
   cats("#catGanhos", r.x.filter(i => i.tipo === "entrada"), r.e, "var(--in)");
   cats("#catGastos", r.x.filter(i => i.tipo === "saida"), r.s, "var(--out)");
-  // histórico
   let h = `<tr><th>Mês</th><th>Recebido</th><th>Gastos</th><th>Saldo final</th></tr>`;
   for (let k = 5; k >= 0; k--) {
-    const mm = addMes(m, -k), q = somaMes(mm), fim = saldoAte(addMes(mm, 1));
-    h += `<tr class="${k === 0 ? "atual" : ""}"><td>${nomeMes(mm, true)}</td><td>${brl(q.e)}</td><td>${brl(q.s)}</td><td class="${cls(fim)}">${brl(fim)}</td></tr>`;
+    const mm = addMes(m, -k), q = somaMes(mm), f = saldoAte(addMes(mm, 1));
+    h += `<tr class="${k === 0 ? "atual" : ""}"><td>${nomeMes(mm, true)}</td><td>${brl(q.e)}</td><td>${brl(q.s)}</td><td class="${cls(f)}">${brl(f)}</td></tr>`;
   }
   $("#hist").innerHTML = h;
-  // lista
-  if (!r.x.length) { $("#lista").innerHTML = `<div class="vazio">Nada lançado em ${nomeMes(m)}. Toque em “+ Lançar”.</div>`; return; }
+  if (!r.x.length) { $("#lista").innerHTML = `<div class="vazio">Nada lançado em ${nomeMes(m).toLowerCase()}. Toque em “+ Lançar”.</div>`; return; }
   let html = "", dia = "";
   for (const i of r.x) {
     if (i.data !== dia) {
       dia = i.data;
       html += `<div class="dia">${new Date(dia + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}</div>`;
     }
-    html += `<button class="item" data-id="${esc(i.id)}"><span class="nome">${esc(i.categoria)}${i.descricao ? `<small>${esc(i.descricao)}</small>` : ""}</span>
-      <span class="v ${i.tipo === "entrada" ? "pos" : "neg"}">${i.tipo === "entrada" ? "+" : "−"} ${brl(i.valor)}</span></button>`;
+    html += `<div class="item"><button class="ed" data-id="${esc(i.id)}"><span class="nome">${esc(i.categoria)}${i.descricao ? `<small>${esc(i.descricao)}</small>` : ""}</span>
+      <span class="v ${i.tipo === "entrada" ? "pos" : "neg"}">${i.tipo === "entrada" ? "+" : "−"} ${brl(i.valor)}</span></button>
+      ${i.pago ? "" : `<div class="pend"><span class="tag${i.data < HOJE ? " atraso" : ""}">${i.data < HOJE ? "atrasado · " : ""}${rotPend(i)}</span>
+        <button class="btn mini marcar" data-id="${esc(i.id)}">✓ ${rotFeito(i)}</button></div>`}</div>`;
   }
   $("#lista").innerHTML = html;
 }
@@ -270,9 +385,13 @@ function cats(sel, itens, total, cor) {
 }
 $("#mesAnt").onclick = () => { S.mes = addMes(S.mes, -1); render(); };
 $("#mesProx").onclick = () => { S.mes = addMes(S.mes, 1); render(); };
-$("#lista").addEventListener("click", e => { const b = e.target.closest(".item"); if (b) abrir(S.itens.find(i => i.id === b.dataset.id)); });
+$("#lista").addEventListener("click", e => {
+  const mk = e.target.closest(".marcar"); if (mk) return marcar(mk.dataset.id, true);
+  const b = e.target.closest(".ed"); if (b) abrir(S.itens.find(i => i.id === b.dataset.id));
+});
 
 // ---------- formulário ----------
+$("#fRep").innerHTML = `<option value="1">Não repetir</option>` + Array.from({ length: 35 }, (_, k) => `<option value="${k + 2}">${k + 2} meses (${k + 2} parcelas)</option>`).join("");
 function setTipo(t) {
   S.tipo = t;
   document.querySelectorAll(".tipos .btn").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
@@ -280,8 +399,19 @@ function setTipo(t) {
   $("#fChips").innerHTML = CATS[t].map(c => `<button type="button" class="chip" aria-pressed="${c === atual}">${esc(c)}</button>`).join("");
   const usadas = [...new Set(S.itens.filter(i => i.tipo === t).map(i => i.categoria))];
   $("#catsUsadas").innerHTML = usadas.map(c => `<option value="${esc(c)}">`).join("");
+  setPago(S.pago);
+}
+function setPago(p) {
+  S.pago = p;
+  const [feito, aberto] = S.tipo === "entrada" ? ["Já recebido", "A receber"] : ["Já pago", "A pagar"];
+  const bs = document.querySelectorAll(".sits .btn");
+  bs[0].textContent = feito; bs[1].textContent = aberto;
+  bs.forEach(b => b.setAttribute("aria-pressed", (b.dataset.p === "1") === p));
+  $("#fDataLbl").textContent = p ? "Data" : (S.tipo === "entrada" ? "Data prevista" : "Vencimento");
 }
 document.querySelectorAll(".tipos .btn").forEach(b => b.onclick = () => setTipo(b.dataset.t));
+document.querySelectorAll(".sits .btn").forEach(b => b.onclick = () => { S.pagoTocado = true; setPago(b.dataset.p === "1"); });
+$("#fData").addEventListener("change", () => { if (!S.pagoTocado && !S.edit) setPago($("#fData").value <= HOJE); });
 $("#fChips").addEventListener("click", e => {
   const c = e.target.closest(".chip"); if (!c) return;
   $("#fCat").value = c.textContent;
@@ -290,14 +420,16 @@ $("#fChips").addEventListener("click", e => {
 $("#fCat").addEventListener("input", () => document.querySelectorAll("#fChips .chip").forEach(x => x.setAttribute("aria-pressed", x.textContent === $("#fCat").value)));
 
 function abrir(item) {
-  S.edit = item || null;
+  S.edit = item || null; S.pagoTocado = false;
   $("#dlgTitulo").textContent = item ? "Editar lançamento" : "Novo lançamento";
   $("#fValor").value = item ? item.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : "";
-  const padrao = S.mes === ymd(hoje).slice(0, 7) ? ymd(hoje) : S.mes + "-01";
+  const padrao = S.mes === HOJE.slice(0, 7) ? HOJE : S.mes + "-01";
   $("#fData").value = item ? item.data : padrao;
   $("#fCat").value = item ? item.categoria : "";
   $("#fDesc").value = item ? item.descricao || "" : "";
+  $("#fRep").value = "1"; $("#fRepBox").hidden = !!item;
   $("#fErro").hidden = true; $("#fApagar").hidden = !item;
+  S.pago = item ? item.pago : $("#fData").value <= HOJE;
   setTipo(item ? item.tipo : S.tipo);
   $("#dlg").showModal();
   if (!item) $("#fValor").focus();
@@ -308,21 +440,28 @@ const lerValor = s => { s = String(s).replace(/[^\d,.-]/g, ""); if (s.includes("
 
 $("#form").addEventListener("submit", async e => {
   e.preventDefault();
-  const valor = lerValor($("#fValor").value), cat = $("#fCat").value.trim();
-  const erro = !(valor > 0) ? "valor" : !cat ? "categoria" : !$("#fData").value ? "data" : null;
+  const valor = lerValor($("#fValor").value), cat = $("#fCat").value.trim(), data = $("#fData").value;
+  const erro = !(valor > 0) ? "valor" : !cat ? "categoria" : !data ? "data" : null;
   if (erro) { $("#fErro").hidden = false; $("#fErro").textContent = ERROS[erro]; return; }
+  const n = S.edit ? 1 : +$("#fRep").value, desc = $("#fDesc").value.trim();
   $("#fSalvar").disabled = true;
-  const r = await rpc("fin_salvar", { p_pin: S.pin, p_id: S.edit ? S.edit.id : null, p_data: $("#fData").value, p_tipo: S.tipo,
-    p_categoria: cat, p_descricao: $("#fDesc").value, p_valor: valor });
+  let r;
+  for (let k = 0; k < n; k++) {
+    const d = addMesData(data, k);
+    r = await rpc("fin_salvar", { p_pin: S.pin, p_id: S.edit ? S.edit.id : null, p_data: d, p_tipo: S.tipo, p_categoria: cat,
+      p_descricao: n > 1 ? `${desc ? desc + " " : ""}(${k + 1}/${n})` : desc, p_valor: valor,
+      p_pago: k === 0 ? S.pago : (S.pago && d <= HOJE) });
+    if (!r.ok) break;
+  }
   $("#fSalvar").disabled = false;
   if (!r.ok) {
     if (r.erro === "pin" || r.erro === "bloqueado") { $("#dlg").close(); store.del("fin_pin"); return telaLogin(ERROS[r.erro]); }
-    $("#fErro").hidden = false; $("#fErro").textContent = ERROS[r.erro] || "Não salvou. Tente de novo."; return;
+    $("#fErro").hidden = false; $("#fErro").textContent = ERROS[r.erro] || "Não salvou. Tente de novo."; await carregar(); return;
   }
   $("#dlg").close();
-  S.mes = $("#fData").value.slice(0, 7);
+  S.mes = data.slice(0, 7);
   await carregar();
-  toast(S.edit ? "Lançamento atualizado." : "Lançamento salvo.");
+  toast(S.edit ? "Lançamento atualizado." : n > 1 ? `${n} parcelas lançadas.` : "Lançamento salvo.");
 });
 
 $("#fApagar").onclick = async () => {
@@ -333,7 +472,7 @@ $("#fApagar").onclick = async () => {
   if (!r.ok) { $("#fErro").hidden = false; $("#fErro").textContent = ERROS[r.erro] || "Não apagou. Tente de novo."; return; }
   $("#dlg").close(); await carregar();
   toast("Lançamento apagado.", async () => {
-    await rpc("fin_salvar", { p_pin: S.pin, p_id: null, p_data: it.data, p_tipo: it.tipo, p_categoria: it.categoria, p_descricao: it.descricao, p_valor: it.valor });
+    await rpc("fin_salvar", { p_pin: S.pin, p_id: null, p_data: it.data, p_tipo: it.tipo, p_categoria: it.categoria, p_descricao: it.descricao, p_valor: it.valor, p_pago: it.pago });
     await carregar();
   });
 };
@@ -343,7 +482,7 @@ function toast(msg, desfazer) {
   clearTimeout(tt);
   $("#toastmsg").textContent = msg; $("#toast").hidden = false;
   $("#toastacao").hidden = !desfazer;
-  $("#toastacao").onclick = async () => { $("#toast").hidden = true; await desfazer(); };
+  $("#toastacao").onclick = async () => { $("#toast").hidden = true; if (desfazer) await desfazer(); };
   tt = setTimeout(() => $("#toast").hidden = true, desfazer ? 6000 : 2500);
 }
 
