@@ -508,18 +508,26 @@ function setPago(p) {
   bs.forEach(b => b.setAttribute("aria-pressed", (b.dataset.p === "1") === p));
   $("#fDataLbl").textContent = p ? "Data" : (S.tipo === "entrada" ? "Quando vai entrar" : "Vencimento");
 }
-document.querySelectorAll(".tipos .btn").forEach(b => b.onclick = () => setTipo(b.dataset.t));
+document.querySelectorAll(".tipos .btn").forEach(b => b.onclick = () => { setTipo(b.dataset.t); repPadrao(); });
 document.querySelectorAll(".sits .btn").forEach(b => b.onclick = () => { S.pagoTocado = true; setPago(b.dataset.p === "1"); });
 $("#fData").addEventListener("change", () => { if (!S.pagoTocado && !S.edit) setPago($("#fData").value <= HOJE); });
+// conta fixa (categoria Contas) já vem repetida por 6 meses; pedido de 23/11/2026. Dá para trocar no campo Repetir.
+const REP_CONTAS = 6;
+function repPadrao() {
+  if (S.edit || S.repTocado) return;
+  $("#fRep").value = S.tipo === "saida" && $("#fCat").value.trim().toLowerCase() === "contas" ? String(REP_CONTAS) : "1";
+}
+$("#fRep").addEventListener("change", () => S.repTocado = true);
 $("#fChips").addEventListener("click", e => {
   const c = e.target.closest(".chip"); if (!c) return;
   $("#fCat").value = c.textContent;
   document.querySelectorAll("#fChips .chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+  repPadrao();
 });
-$("#fCat").addEventListener("input", () => document.querySelectorAll("#fChips .chip").forEach(x => x.setAttribute("aria-pressed", x.textContent === $("#fCat").value)));
+$("#fCat").addEventListener("input", () => { document.querySelectorAll("#fChips .chip").forEach(x => x.setAttribute("aria-pressed", x.textContent === $("#fCat").value)); repPadrao(); });
 
 function abrir(item) {
-  S.edit = item || null; S.pagoTocado = false;
+  S.edit = item || null; S.pagoTocado = false; S.repTocado = false;
   $("#dlgTitulo").textContent = item ? "Editar lançamento" : "Novo lançamento";
   $("#fValor").value = item ? item.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : "";
   const padrao = S.aba === "Mes" && S.mes !== HOJE.slice(0, 7) ? S.mes + "-01" : HOJE;
