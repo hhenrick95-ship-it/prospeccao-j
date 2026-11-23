@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#08101f">
+<title>Metas das Indústrias</title>
+<style>
+/* Painel de TV/celular, tema escuro fixo (como o painel de produtividade): um card por indústria com
+   números em destaque, barra horizontal que muda de cor pelo resultado e indicador "ao vivo". */
+:root {
+  --bg: #08101f; --bg2: #0c1830; --card: #0f1b31; --tile: #15243f; --tile-meta: #0f2f2a; --line: #1f3152;
+  --fg: #eef3fb; --fg2: #93a5c3; --fg3: #5f7396;
+  --blue: #2f8cff; --blue2: #1d5fd1; --abe: #4f8dff;
+  --ok1: #19c37d; --ok2: #8ee36a; --mid1: #ff7a00; --mid2: #ffc23d; --bad1: #ff2e55; --bad2: #ff6b6b;
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box }
+html { -webkit-text-size-adjust: 100% }
+body { margin: 0; min-height: 100vh; background: radial-gradient(1200px 600px at 20% -10%, #12254a 0%, transparent 60%), var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.35 }
+[hidden] { display: none !important }
+.wrap { max-width: 1500px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)) }
+.topo { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 18px }
+h1 { margin: 0; font-size: clamp(24px, 3.2vw, 40px); font-weight: 800; letter-spacing: -.01em }
+.pills { display: flex; gap: 8px; flex-wrap: wrap }
+.pill { border: 1px solid var(--line); background: var(--bg2); border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fg); white-space: nowrap }
+.vivo { display: inline-flex; align-items: center; gap: 8px }
+.vivo i { width: 9px; height: 9px; border-radius: 50%; background: var(--ok1); box-shadow: 0 0 0 0 rgba(25,195,125,.6) }
+.vivo.atrasado i { background: var(--mid2) }
+.vivo.parado i { background: var(--bad1) }
+@media (prefers-reduced-motion: no-preference) { .vivo:not(.parado) i { animation: pulso 2s infinite } }
+@keyframes pulso { 0% { box-shadow: 0 0 0 0 rgba(25,195,125,.55) } 70% { box-shadow: 0 0 0 9px rgba(25,195,125,0) } 100% { box-shadow: 0 0 0 0 rgba(25,195,125,0) } }
+.grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 16px }
+.card { background: linear-gradient(180deg, var(--card), #0c172b); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: grid; gap: 14px; position: relative; transition: border-color .4s, box-shadow .4s }
+.card.bateu { border-color: var(--ok1); box-shadow: 0 0 0 1px var(--ok1), 0 0 24px rgba(25,195,125,.18) }
+.card.vai { border-color: rgba(25,195,125,.55); border-style: dashed }
+.cab { display: flex; align-items: baseline; gap: 10px; padding-left: 12px; border-left: 4px solid var(--blue); line-height: 1.1 }
+.cab b { font-size: 22px; font-weight: 800 }
+.cab span { color: var(--fg2); font-weight: 700; font-size: 12.5px; letter-spacing: .08em; text-transform: uppercase }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px }
+.tile { background: var(--tile); border-radius: 12px; padding: 10px 6px; text-align: center; display: grid; gap: 2px; min-width: 0 }
+.tile.meta { background: var(--tile-meta) }
+.card { container-type: inline-size }
+.tile b { font-size: clamp(14px, 5.6cqw, 24px); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: clip }
+.tile b em { font-style: normal }
+.tile b small { font-size: .62em; font-weight: 700; color: var(--fg2); margin-right: 2px }
+.tile span { font-size: 10.5px; font-weight: 700; letter-spacing: .1em; color: var(--fg2); text-transform: uppercase }
+.tile.flash b { animation: flash 1.6s ease-out }
+@keyframes flash { 0% { color: var(--ok2); text-shadow: 0 0 14px rgba(142,227,106,.7) } 100% { color: var(--fg); text-shadow: none } }
+.status { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap }
+.status .rot { font-size: 13px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase }
+.rot.ok { color: var(--ok2) } .rot.mid { color: var(--mid2) } .rot.bad { color: var(--bad2) }
+.delta { font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--fg2); white-space: nowrap }
+.delta.sobe { color: var(--ok2) }
+.barra { position: relative; height: 16px; border-radius: 999px; background: #0a1426; box-shadow: inset 0 0 0 1px var(--line); overflow: visible }
+.barra .fat, .barra .abe { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 999px }
+.barra .abe { background: repeating-linear-gradient(-45deg, var(--abe) 0 6px, #3a6fd6 6px 12px); opacity: .9 }
+.barra .fat { z-index: 1 }
+.fat.ok { background: linear-gradient(90deg, var(--ok1), var(--ok2)); box-shadow: 0 0 12px rgba(25,195,125,.45) }
+.fat.mid { background: linear-gradient(90deg, var(--mid1), var(--mid2)); box-shadow: 0 0 12px rgba(255,140,0,.35) }
+.fat.bad { background: linear-gradient(90deg, var(--bad1), var(--bad2)); box-shadow: 0 0 12px rgba(255,46,85,.35) }
+.barra .alvo { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--fg); opacity: .75; z-index: 2; border-radius: 2px }
+@media (prefers-reduced-motion: no-preference) { .barra .fat, .barra .abe { transition: width 1.2s cubic-bezier(.2,.8,.2,1) } .card { transition: border-color .4s, box-shadow .4s } }
+.leg { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--fg2); font-variant-numeric: tabular-nums }
+.leg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px }
+.spark { display: grid; gap: 4px }
+.spark svg { width: 100%; height: 44px; display: block }
+.spark .tit { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--fg3); text-transform: uppercase; display: flex; justify-content: space-between }
+.total { margin-top: 16px }
+.total .card { grid-template-columns: minmax(0, 1fr); }
+.rodape { margin-top: 14px; font-size: 12px; color: var(--fg3); max-width: 90ch }
+.login { max-width: 360px; margin: 14vh auto 0; display: grid; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px }
+.login h1 { font-size: 26px }
+label { display: grid; gap: 6px; font-size: 13px; color: var(--fg2) }
+input { font: inherit; color: var(--fg); background: var(--tile); border: 1px solid var(--line); border-radius: 10px; padding: 12px; width: 100% }
+button { font: inherit }
+.btn { border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 800; background: var(--blue); color: #fff; cursor: pointer; min-height: 46px }
+.btn:disabled { opacity: .6 }
+.link { background: none; border: 0; color: var(--fg3); text-decoration: underline; cursor: pointer; padding: 4px; font-size: 12px }
+.erro { color: var(--bad2); margin: 0; font-size: 14px }
+:is(.btn, .link, input):focus-visible { outline: 2px solid var(--blue); outline-offset: 2px }
+.aviso { background: var(--card); border: 1px dashed var(--line); border-radius: 14px; padding: 16px; color: var(--fg2) }
+</style>
+</head>
+<body>
+
+<section id="telaLogin" hidden>
+  <div class="wrap">
+    <form class="login" id="formLogin">
+      <h1>Metas das Indústrias</h1>
+      <label for="pin">PIN do painel<input id="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" required></label>
+      <p class="erro" id="loginErro" hidden></p>
+      <button class="btn" id="loginBtn" type="submit">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<section id="telaApp" hidden>
+  <div class="wrap">
+    <div class="topo">
+      <h1>Metas das Indústrias</h1>
+      <div class="pills">
+        <span class="pill" id="ciclo">Ciclo</span>
+        <span class="pill vivo" id="vivo"><i></i><span id="vivoTxt">Ao vivo</span></span>
+      </div>
+    </div>
+    <div class="grade" id="grade"></div>
+    <div class="total" id="total"></div>
+    <p class="rodape">Faturado: pedidos faturados (posição F) pela data do faturamento no ciclo de 28 a 27. A faturar (listrado): pedidos digitados no ciclo e ainda não faturados (L, M, P, B). Meta: tabela de metas do mês. Os números chegam do Winthor a cada 5 minutos, das 7h às 20h.
+      <button class="link" id="sair">Sair</button></p>
+  </div>
+</section>
+
+<script>
+const SUPABASE_URL = "https://fxsqzgsijqnxkjtksnvs.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4c3F6Z3NpanFueGtqdGtzbnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDg2NTcsImV4cCI6MjExMDA4NDY1N30.zWE1Y6ZPg5EKjSwdsVBhUi7bWP7C14rUVUS_cYWCJrU";
+const $ = s => document.querySelector(s);
+const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} }, del(k) { try { localStorage.removeItem(k) } catch {} } };
+const ERROS = { pin: "PIN errado.", bloqueado: "Muitas tentativas erradas. Espere 15 minutos.", rede: "Sem conexão com o servidor. Confira a internet." };
+const ORDEM = ["Danone", "Cia Mineira", "Natural One", "Piracanjuba"];
+const S = { pin: store.get("metas_pin") || "", ultimo: null, mostrado: {}, timer: null };
+const reduz = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const mi = v => (v / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const curto = v => Math.abs(v) >= 1e6 ? `R$ ${mi(v)} mi` : `R$ ${Math.round(v / 1e3).toLocaleString("pt-BR")} mil`;
+const semRS = v => curto(v).replace("R$ ", "");
+const brl = v => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const pct = v => Math.round(v).toLocaleString("pt-BR") + "%";
+const hm = iso => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+const dm = s => `${s.slice(8, 10)}/${s.slice(5, 7)}`;
+
+async function ler() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/metas_ler`, { method: "POST",
+      headers: { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_pin: S.pin }) });
+    if (!r.ok) return { ok: false, erro: "rede" };
+    return await r.json();
+  } catch { return { ok: false, erro: "rede" }; }
+}
+
+function telaLogin(msg) {
+  clearInterval(S.timer);
+  $("#telaApp").hidden = true; $("#telaLogin").hidden = false;
+  $("#loginErro").hidden = !msg; $("#loginErro").textContent = msg || "";
+  $("#pin").focus();
+}
+$("#formLogin").addEventListener("submit", async e => {
+  e.preventDefault(); S.pin = $("#pin").value.trim();
+  $("#loginBtn").disabled = true; await atualizar(true); $("#loginBtn").disabled = false;
+});
+$("#sair").onclick = () => { store.del("metas_pin"); S.pin = ""; $("#pin").value = ""; telaLogin(); };
+
+async function atualizar(primeira) {
+  const r = await ler();
+  if (!r.ok) {
+    if (r.erro === "pin" || r.erro === "bloqueado") { store.del("metas_pin"); return telaLogin(ERROS[r.erro]); }
+    if (primeira && !S.ultimo) return telaLogin(ERROS.rede);
+    return marcarVivo(true);
+  }
+  store.set("metas_pin", S.pin);
+  $("#telaLogin").hidden = true; $("#telaApp").hidden = false;
+  if (!r.dados) { $("#grade").innerHTML = `<div class="aviso">Ainda não chegou nenhum número. O envio começa às 7h, a cada 5 minutos.</div>`; return; }
+  S.ultimo = r;
+  render(r);
+  if (primeira) { clearInterval(S.timer); S.timer = setInterval(() => atualizar(false), 60000); }
+}
+function marcarVivo(semRede) {
+  if (!S.ultimo) return;
+  const min = (Date.now() - new Date(S.ultimo.em)) / 60000;
+  const v = $("#vivo");
+  v.classList.toggle("atrasado", !semRede && min > 12 && min <= 60);
+  v.classList.toggle("parado", semRede || min > 60);
+  $("#vivoTxt").textContent = semRede ? "Sem conexão" : min > 60 ? `Parado desde ${hm(S.ultimo.em)}` : `Ao vivo · ${hm(S.ultimo.em)}`;
+}
+setInterval(() => marcarVivo(false), 30000);
+
+// ---------- desenho ----------
+function contar(el, de, ate, fmt) {
+  if (reduz || de === ate || de == null) { el.textContent = fmt(ate); return; }
+  const t0 = performance.now(), dur = 900;
+  const passo = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = fmt(de + (ate - de) * e); if (k < 1) requestAnimationFrame(passo); };
+  requestAnimationFrame(passo);
+}
+function classe(p) { return p >= 100 ? "ok" : p < 40 ? "bad" : "mid"; }
+
+function cardHtml(id, titulo, sub) {
+  return `<article class="card" id="c-${id}">
+    <div class="cab"><b>${titulo}</b><span>${sub}</span></div>
+    <div class="tiles">
+      <div class="tile" data-k="fat"><b><small>R$</small><em>—</em></b><span>Faturado</span></div>
+      <div class="tile" data-k="abe"><b><small>R$</small><em>—</em></b><span>A faturar</span></div>
+      <div class="tile meta" data-k="meta"><b><small>R$</small><em>—</em></b><span>Meta</span></div>
+    </div>
+    <div class="status"><span class="rot">—</span><span class="delta"></span></div>
+    <div class="barra" role="img"><div class="abe"></div><div class="fat"></div><div class="alvo"></div></div>
+    <div class="leg"><span class="l1"></span><span class="l2"></span></div>
+    <div class="spark"><div class="tit"><span>Hoje</span><span class="sp-dif"></span></div><svg viewBox="0 0 300 44" preserveAspectRatio="none"></svg></div>
+  </article>`;
+}
+
+function render(r) {
+  const d = r.dados, fim = new Date(d.ciclo_fim + "T23:59:59");
+  const dias = Math.max(0, Math.ceil((fim - Date.now()) / 864e5));
+  $("#ciclo").textContent = `Ciclo ${dm(d.ciclo_inicio)} a ${dm(d.ciclo_fim)} · ${dias === 0 ? "último dia" : dias === 1 ? "falta 1 dia" : "faltam " + dias + " dias"}`;
+  marcarVivo(false);
+  const itens = [...d.industrias].sort((a, b) => ORDEM.indexOf(a.industria) - ORDEM.indexOf(b.industria));
+  const total = itens.reduce((t, x) => ({ industria: "Total", meta: t.meta + +x.meta, faturado: t.faturado + +x.faturado, a_faturar: t.a_faturar + +x.a_faturar }), { meta: 0, faturado: 0, a_faturar: 0 });
+  const grade = $("#grade");
+  if (!grade.querySelector(".card")) grade.innerHTML = itens.map(x => cardHtml(slug(x.industria), x.industria, "Ciclo atual")).join("");
+  if (!$("#total").querySelector(".card")) $("#total").innerHTML = cardHtml("total", "Total", "4 indústrias");
+  const dia = r.dia || [];
+  itens.forEach(x => desenhar(slug(x.industria), x, serie(dia, x.industria)));
+  desenhar("total", total, serie(dia, null));
+}
+const slug = s => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-");
+function serie(dia, nome) {
+  return dia.map(f => {
+    const its = f.itens || [];
+    const sel = nome ? its.filter(i => i.industria === nome) : its;
+    return { em: f.em, fat: sel.reduce((a, i) => a + +i.faturado, 0), tot: sel.reduce((a, i) => a + +i.faturado + +i.a_faturar, 0) };
+  });
+}
+
+function desenhar(id, x, pts) {
+  const c = $("#c-" + id); if (!c) return;
+  const meta = +x.meta, fat = +x.faturado, abe = +x.a_faturar;
+  const pF = meta ? 100 * fat / meta : 0, pT = meta ? 100 * (fat + abe) / meta : 0;
+  const ant = S.mostrado[id] || {};
+  // tiles com contagem e brilho quando sobe
+  [["fat", fat], ["abe", abe], ["meta", meta]].forEach(([k, v]) => {
+    const t = c.querySelector(`.tile[data-k=${k}]`), b = t.querySelector("b em");
+    contar(b, ant[k], v, semRS);
+    if (ant[k] != null && v > ant[k] + 0.5 && k !== "meta") { t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash"); }
+  });
+  const rot = c.querySelector(".rot"), cl = classe(pF);
+  rot.className = "rot " + (pT >= 100 && pF < 100 ? "ok" : cl);
+  rot.textContent = pF >= 100 ? `Bateu a meta · ${pct(pF)}` : pT >= 100 ? `${pct(pF)} da meta · bate com os pedidos` : `${pct(pF)} da meta`;
+  c.classList.toggle("bateu", pF >= 100);
+  c.classList.toggle("vai", pF < 100 && pT >= 100);
+  // variação desde a foto anterior (como cotação)
+  const dEl = c.querySelector(".delta");
+  if (pts.length >= 2) {
+    const a = pts[pts.length - 2], b = pts[pts.length - 1], dv = b.fat - a.fat;
+    dEl.className = "delta" + (dv > 0.5 ? " sobe" : "");
+    dEl.textContent = dv > 0.5 ? `▲ +${brl(dv)} faturado desde ${hm(a.em)}` : `sem novo faturamento desde ${hm(a.em)}`;
+  } else dEl.textContent = "";
+  // barra: escala até 100% da meta, ou mais se passar
+  const topo = Math.max(100, pT) * (pT > 100 ? 1.04 : 1);
+  const wF = Math.min(100, 100 * pF / topo), wT = Math.min(100, 100 * pT / topo);
+  const fEl = c.querySelector(".fat"), aEl = c.querySelector(".abe");
+  fEl.className = "fat " + cl;
+  if (!ant.init && !reduz) { fEl.style.width = "0%"; aEl.style.width = "0%"; requestAnimationFrame(() => requestAnimationFrame(() => { fEl.style.width = wF + "%"; aEl.style.width = wT + "%"; })); }
+  else { fEl.style.width = wF + "%"; aEl.style.width = wT + "%"; }
+  const alvo = c.querySelector(".alvo"); alvo.style.left = `calc(${100 * 100 / topo}% - 1px)`; alvo.hidden = topo === 100;
+  c.querySelector(".barra").setAttribute("aria-label", `${x.industria}: ${pct(pF)} da meta faturado, ${pct(pT)} com o que falta faturar`);
+  c.querySelector(".l1").innerHTML = `<i style="background:linear-gradient(90deg,var(--${cl === "ok" ? "ok1" : cl === "bad" ? "bad1" : "mid1"}),var(--${cl === "ok" ? "ok2" : cl === "bad" ? "bad2" : "mid2"}))"></i>Faturado ${pct(pF)}`;
+  c.querySelector(".l2").innerHTML = pT >= pF + 0.5
+    ? `<i style="background:var(--abe)"></i>Com a faturar ${pct(pT)} · falta ${meta > fat + abe ? curto(meta - fat - abe) : "nada"}`
+    : `Falta ${curto(Math.max(meta - fat, 0))}`;
+  // linha do dia (faturado e faturado + a faturar)
+  const svg = c.querySelector("svg"), sd = c.querySelector(".sp-dif");
+  if (pts.length >= 2) {
+    // escala do dia com folga mínima de 3% do valor, para uma variação pequena não parecer um salto
+    const ys = pts.flatMap(p => [p.fat, p.tot]), mx0 = Math.max(...ys), mn0 = Math.min(...ys);
+    const folga = Math.max(0, mx0 * 0.03 - (mx0 - mn0)) / 2, mn = mn0 - folga, mx = mx0 + folga, rg = mx - mn || 1;
+    const t0 = new Date(pts[0].em).getTime(), t1 = new Date(pts[pts.length - 1].em).getTime(), rt = t1 - t0 || 1;
+    const path = k => pts.map((p, i) => `${i ? "L" : "M"}${(300 * (new Date(p.em).getTime() - t0) / rt).toFixed(1)},${(40 - 36 * (p[k] - mn) / rg).toFixed(1)}`).join(" ");
+    const last = pts[pts.length - 1];
+    svg.innerHTML = `<path d="${path("tot")}" fill="none" stroke="var(--abe)" stroke-width="1.5" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+      <path d="${path("fat")} L300,44 L0,44 Z" fill="rgba(25,195,125,.10)" stroke="none"/>
+      <path d="${path("fat")}" fill="none" stroke="var(--ok1)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      <circle cx="300" cy="${(40 - 36 * (last.fat - mn) / rg).toFixed(1)}" r="3" fill="var(--ok2)"/>`;
+    const dif = last.fat - pts[0].fat;
+    sd.textContent = dif > 0.5 ? `+${curto(dif)} faturado desde ${hm(pts[0].em)}` : `desde ${hm(pts[0].em)}`;
+  } else { svg.innerHTML = ""; sd.textContent = "a linha aparece com os próximos envios"; }
+  S.mostrado[id] = { fat, abe, meta, init: true };
+}
+
+if (S.pin) atualizar(true); else telaLogin();
+</script>
+</body>
+</html>
