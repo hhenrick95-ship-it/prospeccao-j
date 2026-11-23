@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b6e4f">
+<title>Minhas finanças</title>
+<style>
+/* Controle pessoal, uma coluna no celular: mês no topo, resumo do mês, botão de lançar, categorias, histórico de 6 meses e a lista. */
+:root {
+  --bg: #f3f5f4; --surface: #ffffff; --ink: #14201c; --ink2: #56635e; --line: #dde3e0;
+  --accent: #0b6e4f; --accent-ink: #ffffff; --accent-soft: #e2f1eb;
+  --in: #0b6e4f; --in-soft: #e2f1eb; --out: #a32020; --out-soft: #fbe5e3;
+  --display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r: 10px; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0f1513; --surface: #18201d; --ink: #e8eeeb; --ink2: #9aa8a2; --line: #2a3531;
+  --accent: #3fbf8f; --accent-ink: #06130e; --accent-soft: #173229;
+  --in: #3fbf8f; --in-soft: #173229; --out: #ff8a80; --out-soft: #3a1c1a; color-scheme: dark } }
+* { box-sizing: border-box }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px) }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.4 }
+[hidden] { display: none !important }
+.wrap { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+header { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line) }
+header .wrap { padding-block: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px }
+h1 { font-family: var(--display); font-size: 22px; margin: 0; line-height: 1.1 }
+h2 { font-family: var(--display); font-size: 18px; margin: 0 0 8px }
+.sub { color: var(--ink2); font-size: 12.5px }
+.mes { display: flex; align-items: center; gap: 4px }
+.mes strong { font-family: var(--display); font-size: 19px; min-width: 132px; text-align: center }
+main .wrap { padding-block: 14px 96px; display: grid; gap: 12px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px }
+.resumo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+.kpi { display: grid; gap: 2px }
+.kpi span { font-size: 12px; color: var(--ink2); text-transform: uppercase; letter-spacing: .05em }
+.kpi b { font-family: var(--display); font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums }
+.kpi.saldo { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid var(--line) }
+.kpi.saldo b { font-size: 34px }
+.pos { color: var(--in) } .neg { color: var(--out) }
+.kpi small { font-size: 12.5px; color: var(--ink2) }
+select, input { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; width: 100% }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--ink2) }
+.btn { font: inherit; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer }
+.btn.pri { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.btn.ico { min-width: 44px; padding: 0; font-size: 20px }
+.btn.link { border: 0; background: none; color: var(--ink2); min-height: 0; padding: 4px; font-weight: 500; text-decoration: underline }
+.btn.perigo { color: var(--out) }
+.btn:disabled { opacity: .55; cursor: default }
+.btn:focus-visible, input:focus-visible, select:focus-visible, .chip:focus-visible, .item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 6; border-radius: 999px; padding: 0 20px; min-height: 52px; box-shadow: 0 4px 14px rgba(0,0,0,.18); font-size: 16px }
+.tipos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
+.tipos .btn[aria-pressed=true][data-t=entrada] { background: var(--in); color: var(--accent-ink); border-color: var(--in) }
+.tipos .btn[aria-pressed=true][data-t=saida] { background: var(--out); color: #fff; border-color: var(--out) }
+.chips { display: flex; gap: 6px; flex-wrap: wrap }
+.chip { font: inherit; font-size: 13px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink2); cursor: pointer }
+.chip[aria-pressed=true] { background: var(--ink); color: var(--surface); border-color: var(--ink) }
+.form { display: grid; gap: 12px }
+.dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.valor input { font-size: 22px; font-family: var(--display); font-variant-numeric: tabular-nums }
+.erro { color: var(--out); font-size: 13.5px; margin: 0 }
+.acoes { display: flex; gap: 8px; flex-wrap: wrap }
+.acoes .btn { flex: 1 1 120px }
+.cats { display: grid; gap: 8px }
+.cat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 14px }
+.cat .barra { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden }
+.cat .barra i { display: block; height: 100%; border-radius: 4px }
+.cat b { font-variant-numeric: tabular-nums; font-weight: 600 }
+.cat small { color: var(--ink2); font-weight: 400 }
+table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums }
+th, td { padding: 7px 4px; text-align: right; border-bottom: 1px solid var(--line) }
+th { font-size: 12px; color: var(--ink2); font-weight: 600 }
+th:first-child, td:first-child { text-align: left; white-space: nowrap }
+tr.atual td { font-weight: 700 }
+.dia { font-size: 12.5px; color: var(--ink2); font-weight: 600; padding: 10px 0 4px; text-transform: capitalize }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; background: none; border-left: 0; border-right: 0; border-top: 0; width: 100%; font: inherit; color: inherit; text-align: left }
+.item .nome { font-weight: 600; overflow-wrap: anywhere }
+.item .nome small { display: block; font-weight: 400; color: var(--ink2); font-size: 12.5px }
+.item .v { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap }
+.vazio { color: var(--ink2); font-size: 14px; padding: 8px 0 }
+.login { max-width: 360px; margin: 10vh auto 0; display: grid; gap: 12px }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: 10px; display: flex; gap: 12px; align-items: center; font-size: 14px; z-index: 20; max-width: calc(100% - 32px) }
+.toast button { font: inherit; font-weight: 700; background: none; border: 0; color: var(--accent-soft); cursor: pointer; padding: 4px }
+dialog { border: 0; padding: 0; background: transparent; width: min(96vw, 520px); max-height: 92vh }
+dialog::backdrop { background: rgba(0,0,0,.55) }
+dialog .card { max-height: 92vh; overflow: auto }
+</style>
+</head>
+<body>
+
+<section id="telaLogin" hidden>
+  <div class="wrap">
+    <form class="card login" id="formLogin">
+      <h1>Minhas finanças</h1>
+      <label for="pin">PIN<input id="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" required></label>
+      <p class="erro" id="loginErro" hidden></p>
+      <button class="btn pri" type="submit" id="loginBtn">Entrar</button>
+      <p class="sub">O celular lembra o acesso. Use “Sair” se o aparelho não for só seu.</p>
+    </form>
+  </div>
+</section>
+
+<section id="telaApp" hidden>
+  <header>
+    <div class="wrap">
+      <div class="mes">
+        <button class="btn ico" id="mesAnt" aria-label="Mês anterior">‹</button>
+        <strong id="mesNome"></strong>
+        <button class="btn ico" id="mesProx" aria-label="Próximo mês">›</button>
+      </div>
+      <button class="btn link" id="sair">Sair</button>
+    </div>
+  </header>
+  <main><div class="wrap">
+    <div class="card resumo" id="resumo"></div>
+    <div class="card" id="boxGanhos"><h2>Ganhos por categoria</h2><div class="cats" id="catGanhos"></div></div>
+    <div class="card" id="boxGastos"><h2>Gastos por categoria</h2><div class="cats" id="catGastos"></div></div>
+    <div class="card"><h2>Últimos 6 meses</h2><table id="hist"></table></div>
+    <div class="card"><h2>Lançamentos do mês</h2><div id="lista"></div></div>
+  </div></main>
+  <button class="btn pri fab" id="novo">+ Lançar</button>
+</section>
+
+<dialog id="dlg" aria-labelledby="dlgTitulo">
+  <form class="card form" id="form" method="dialog">
+    <h2 id="dlgTitulo">Novo lançamento</h2>
+    <div class="tipos" role="group" aria-label="Tipo">
+      <button type="button" class="btn" data-t="entrada" aria-pressed="true">Ganho</button>
+      <button type="button" class="btn" data-t="saida" aria-pressed="false">Gasto</button>
+    </div>
+    <div class="dupla">
+      <label class="valor" for="fValor">Valor (R$)<input id="fValor" inputmode="decimal" autocomplete="off" placeholder="0,00" required></label>
+      <label for="fData">Data<input id="fData" type="date" required></label>
+    </div>
+    <div style="display:grid;gap:6px">
+      <span class="sub">Categoria</span>
+      <div class="chips" id="fChips"></div>
+      <input id="fCat" list="catsUsadas" placeholder="Ou escreva outra categoria" aria-label="Categoria" maxlength="60">
+      <datalist id="catsUsadas"></datalist>
+    </div>
+    <label for="fDesc">Descrição (opcional)<input id="fDesc" maxlength="200" placeholder="Ex.: comissão de outubro, mercado do mês"></label>
+    <p class="erro" id="fErro" hidden></p>
+    <div class="acoes">
+      <button type="submit" class="btn pri" id="fSalvar" value="salvar">Salvar</button>
+      <button type="button" class="btn" id="fCancelar">Cancelar</button>
+      <button type="button" class="btn perigo" id="fApagar" hidden>Apagar</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" hidden><span id="toastmsg"></span><button id="toastacao" hidden>Desfazer</button></div>
+
+<script>
+const SUPABASE_URL = "https://fxsqzgsijqnxkjtksnvs.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4c3F6Z3NpanFueGtqdGtzbnZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDg2NTcsImV4cCI6MjExMDA4NDY1N30.zWE1Y6ZPg5EKjSwdsVBhUi7bWP7C14rUVUS_cYWCJrU";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const brl = v => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const store = { get(k) { try { return localStorage.getItem(k) } catch { return null } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} }, del(k) { try { localStorage.removeItem(k) } catch {} } };
+const H = { apikey: SUPABASE_ANON, Authorization: "Bearer " + SUPABASE_ANON, "Content-Type": "application/json" };
+const ERROS = { pin: "PIN errado.", bloqueado: "Muitas tentativas erradas. Espere 15 minutos.", valor: "Valor inválido.", categoria: "Escolha uma categoria.", data: "Informe a data.", rede: "Sem conexão. Confira a internet e tente de novo." };
+const CATS = {
+  entrada: ["Salário", "Comissão", "Premiação", "Bônus", "Extra", "Reembolso"],
+  saida: ["Moradia", "Alimentação", "Mercado", "Transporte", "Combustível", "Contas", "Cartão", "Saúde", "Educação", "Lazer", "Filhos", "Outros"]
+};
+
+const hoje = new Date();
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const S = { pin: store.get("fin_pin") || "", itens: [], mes: ymd(hoje).slice(0, 7), edit: null, tipo: "entrada" };
+
+async function rpc(fn, body) {
+  let r;
+  try { r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: "POST", headers: H, body: JSON.stringify(body) }); }
+  catch { return { ok: false, erro: "rede" }; }
+  if (!r.ok) return { ok: false, erro: "rede" };
+  return r.json();
+}
+
+// ---------- login ----------
+function telaLogin(msg) {
+  $("#telaApp").hidden = true; $("#telaLogin").hidden = false;
+  $("#loginErro").hidden = !msg; $("#loginErro").textContent = msg || "";
+  $("#pin").focus();
+}
+$("#formLogin").addEventListener("submit", async e => {
+  e.preventDefault();
+  S.pin = $("#pin").value.trim();
+  $("#loginBtn").disabled = true; await carregar(); $("#loginBtn").disabled = false;
+});
+$("#sair").onclick = () => { store.del("fin_pin"); S.pin = ""; S.itens = []; $("#pin").value = ""; telaLogin(); };
+
+async function carregar() {
+  const r = await rpc("fin_listar", { p_pin: S.pin });
+  if (!r.ok) {
+    if (r.erro === "pin" || r.erro === "bloqueado") { store.del("fin_pin"); return telaLogin(ERROS[r.erro]); }
+    if (!S.itens.length && $("#telaApp").hidden) return telaLogin(ERROS.rede);
+    return toast(ERROS.rede);
+  }
+  store.set("fin_pin", S.pin);
+  S.itens = r.itens.map(i => ({ ...i, valor: Number(i.valor) }));
+  $("#telaLogin").hidden = true; $("#telaApp").hidden = false;
+  render();
+}
+
+// ---------- telas ----------
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const nomeMes = (m, curto) => { const n = MESES[+m.slice(5, 7) - 1]; return curto ? `${n.slice(0, 3)}/${m.slice(2, 4)}` : `${n[0].toUpperCase() + n.slice(1)} ${m.slice(0, 4)}`; };
+const somaMes = m => {
+  const x = S.itens.filter(i => i.data.startsWith(m));
+  const e = x.filter(i => i.tipo === "entrada").reduce((a, i) => a + i.valor, 0);
+  const s = x.filter(i => i.tipo === "saida").reduce((a, i) => a + i.valor, 0);
+  return { x, e, s, saldo: e - s };
+};
+const addMes = (m, n) => { const d = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1 + n, 1); return ymd(d).slice(0, 7); };
+const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+
+function render() {
+  const m = S.mes, r = somaMes(m);
+  $("#mesNome").textContent = nomeMes(m);
+  const ano = m.slice(0, 4);
+  let anoSaldo = 0; for (let k = 1; k <= +m.slice(5, 7); k++) anoSaldo += somaMes(`${ano}-${String(k).padStart(2, "0")}`).saldo;
+  const pct = r.e > 0 ? Math.round(100 * r.saldo / r.e) : null;
+  $("#resumo").innerHTML = `
+    <div class="kpi"><span>Ganhos</span><b class="pos">${brl(r.e)}</b></div>
+    <div class="kpi"><span>Gastos</span><b class="neg">${brl(r.s)}</b></div>
+    <div class="kpi saldo"><span>Sobrou no mês</span><b class="${cls(r.saldo)}">${brl(r.saldo)}</b>
+      <small>${pct === null ? "Sem ganhos lançados neste mês" : `${pct}% do que você ganhou`} · Acumulado em ${ano}: <span class="${cls(anoSaldo)}">${brl(anoSaldo)}</span></small></div>`;
+  cats("#catGanhos", r.x.filter(i => i.tipo === "entrada"), r.e, "var(--in)");
+  cats("#catGastos", r.x.filter(i => i.tipo === "saida"), r.s, "var(--out)");
+  // histórico
+  let h = `<tr><th>Mês</th><th>Ganhos</th><th>Gastos</th><th>Sobrou</th></tr>`;
+  for (let k = 5; k >= 0; k--) {
+    const mm = addMes(m, -k), q = somaMes(mm);
+    h += `<tr class="${k === 0 ? "atual" : ""}"><td>${nomeMes(mm, true)}</td><td>${brl(q.e)}</td><td>${brl(q.s)}</td><td class="${cls(q.saldo)}">${brl(q.saldo)}</td></tr>`;
+  }
+  $("#hist").innerHTML = h;
+  // lista
+  if (!r.x.length) { $("#lista").innerHTML = `<div class="vazio">Nada lançado em ${nomeMes(m)}. Toque em “+ Lançar”.</div>`; return; }
+  let html = "", dia = "";
+  for (const i of r.x) {
+    if (i.data !== dia) {
+      dia = i.data;
+      html += `<div class="dia">${new Date(dia + "T12:00").toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })}</div>`;
+    }
+    html += `<button class="item" data-id="${esc(i.id)}"><span class="nome">${esc(i.categoria)}${i.descricao ? `<small>${esc(i.descricao)}</small>` : ""}</span>
+      <span class="v ${i.tipo === "entrada" ? "pos" : "neg"}">${i.tipo === "entrada" ? "+" : "−"} ${brl(i.valor)}</span></button>`;
+  }
+  $("#lista").innerHTML = html;
+}
+function cats(sel, itens, total, cor) {
+  const box = $(sel);
+  if (!itens.length) { box.innerHTML = `<div class="vazio">Nenhum lançamento.</div>`; return; }
+  const g = {}; itens.forEach(i => g[i.categoria] = (g[i.categoria] || 0) + i.valor);
+  const ord = Object.entries(g).sort((a, b) => b[1] - a[1]), max = ord[0][1];
+  box.innerHTML = ord.map(([c, v]) => `<div class="cat"><span>${esc(c)}</span><b>${brl(v)} <small>${Math.round(100 * v / total)}%</small></b>
+    <div class="barra"><i style="width:${Math.max(2, 100 * v / max)}%;background:${cor}"></i></div></div>`).join("");
+}
+$("#mesAnt").onclick = () => { S.mes = addMes(S.mes, -1); render(); };
+$("#mesProx").onclick = () => { S.mes = addMes(S.mes, 1); render(); };
+$("#lista").addEventListener("click", e => { const b = e.target.closest(".item"); if (b) abrir(S.itens.find(i => i.id === b.dataset.id)); });
+
+// ---------- formulário ----------
+function setTipo(t) {
+  S.tipo = t;
+  document.querySelectorAll(".tipos .btn").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === t));
+  const atual = $("#fCat").value;
+  $("#fChips").innerHTML = CATS[t].map(c => `<button type="button" class="chip" aria-pressed="${c === atual}">${esc(c)}</button>`).join("");
+  const usadas = [...new Set(S.itens.filter(i => i.tipo === t).map(i => i.categoria))];
+  $("#catsUsadas").innerHTML = usadas.map(c => `<option value="${esc(c)}">`).join("");
+}
+document.querySelectorAll(".tipos .btn").forEach(b => b.onclick = () => setTipo(b.dataset.t));
+$("#fChips").addEventListener("click", e => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  $("#fCat").value = c.textContent;
+  document.querySelectorAll("#fChips .chip").forEach(x => x.setAttribute("aria-pressed", x === c));
+});
+$("#fCat").addEventListener("input", () => document.querySelectorAll("#fChips .chip").forEach(x => x.setAttribute("aria-pressed", x.textContent === $("#fCat").value)));
+
+function abrir(item) {
+  S.edit = item || null;
+  $("#dlgTitulo").textContent = item ? "Editar lançamento" : "Novo lançamento";
+  $("#fValor").value = item ? item.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) : "";
+  const padrao = S.mes === ymd(hoje).slice(0, 7) ? ymd(hoje) : S.mes + "-01";
+  $("#fData").value = item ? item.data : padrao;
+  $("#fCat").value = item ? item.categoria : "";
+  $("#fDesc").value = item ? item.descricao || "" : "";
+  $("#fErro").hidden = true; $("#fApagar").hidden = !item;
+  setTipo(item ? item.tipo : S.tipo);
+  $("#dlg").showModal();
+  if (!item) $("#fValor").focus();
+}
+$("#novo").onclick = () => abrir(null);
+$("#fCancelar").onclick = () => $("#dlg").close();
+const lerValor = s => { s = String(s).replace(/[^\d,.-]/g, ""); if (s.includes(",")) s = s.replace(/\./g, "").replace(",", "."); return Number(s); };
+
+$("#form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const valor = lerValor($("#fValor").value), cat = $("#fCat").value.trim();
+  const erro = !(valor > 0) ? "valor" : !cat ? "categoria" : !$("#fData").value ? "data" : null;
+  if (erro) { $("#fErro").hidden = false; $("#fErro").textContent = ERROS[erro]; return; }
+  $("#fSalvar").disabled = true;
+  const r = await rpc("fin_salvar", { p_pin: S.pin, p_id: S.edit ? S.edit.id : null, p_data: $("#fData").value, p_tipo: S.tipo,
+    p_categoria: cat, p_descricao: $("#fDesc").value, p_valor: valor });
+  $("#fSalvar").disabled = false;
+  if (!r.ok) {
+    if (r.erro === "pin" || r.erro === "bloqueado") { $("#dlg").close(); store.del("fin_pin"); return telaLogin(ERROS[r.erro]); }
+    $("#fErro").hidden = false; $("#fErro").textContent = ERROS[r.erro] || "Não salvou. Tente de novo."; return;
+  }
+  $("#dlg").close();
+  S.mes = $("#fData").value.slice(0, 7);
+  await carregar();
+  toast(S.edit ? "Lançamento atualizado." : "Lançamento salvo.");
+});
+
+$("#fApagar").onclick = async () => {
+  const it = S.edit; if (!it) return;
+  $("#fApagar").disabled = true;
+  const r = await rpc("fin_apagar", { p_pin: S.pin, p_id: it.id });
+  $("#fApagar").disabled = false;
+  if (!r.ok) { $("#fErro").hidden = false; $("#fErro").textContent = ERROS[r.erro] || "Não apagou. Tente de novo."; return; }
+  $("#dlg").close(); await carregar();
+  toast("Lançamento apagado.", async () => {
+    await rpc("fin_salvar", { p_pin: S.pin, p_id: null, p_data: it.data, p_tipo: it.tipo, p_categoria: it.categoria, p_descricao: it.descricao, p_valor: it.valor });
+    await carregar();
+  });
+};
+
+let tt;
+function toast(msg, desfazer) {
+  clearTimeout(tt);
+  $("#toastmsg").textContent = msg; $("#toast").hidden = false;
+  $("#toastacao").hidden = !desfazer;
+  $("#toastacao").onclick = async () => { $("#toast").hidden = true; await desfazer(); };
+  tt = setTimeout(() => $("#toast").hidden = true, desfazer ? 6000 : 2500);
+}
+
+if (S.pin) carregar(); else telaLogin();
+</script>
+</body>
+</html>
